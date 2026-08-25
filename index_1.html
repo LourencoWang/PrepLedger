@@ -1,0 +1,959 @@
+<title>PrepLedger</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&display=swap">
+<style>
+  :root{
+    --bg:#050505;
+    --ink:#F4F3EF;
+    --ink-soft:#9C9B95;
+    --ink-faint:#6E6D67;
+    --line:rgba(255,255,255,0.18);
+    --line-soft:rgba(255,255,255,0.09);
+    --surface:rgba(255,255,255,0.035);
+    --surface-strong:rgba(255,255,255,0.07);
+    --blue:#4C7CF0;
+    --amber:#E2952E;
+    --contrast:#08080A;
+    --shadow:rgba(0,0,0,0.55);
+    --focus:#82A4FF;
+
+    --display:'Archivo',-apple-system,'Segoe UI',sans-serif;
+    --body:'Archivo',-apple-system,'Segoe UI',sans-serif;
+  }
+
+  *,*::before,*::after{box-sizing:border-box;}
+  html{-webkit-text-size-adjust:100%;}
+  body{
+    margin:0;background:var(--bg);color:var(--ink);
+    font-family:var(--body);line-height:1.5;-webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3,p{margin:0;}
+  button{font:inherit;color:inherit;}
+  a{color:inherit;}
+  ::selection{background:var(--blue);color:#fff;}
+  :focus-visible{outline:2px solid var(--focus);outline-offset:3px;}
+
+  .page{max-width:920px;margin:0 auto;padding:0 1.5rem;}
+
+  /* ---------- header ---------- */
+  .site-header{
+    display:flex;justify-content:space-between;align-items:center;gap:1rem;
+    padding:1.75rem 0;
+  }
+  .wordmark{
+    font-family:var(--display);font-size:1.05rem;
+    letter-spacing:.03em;
+  }
+  .wordmark-prep{font-weight:800;color:var(--ink);}
+  .wordmark-ledger{font-weight:400;color:var(--ink-faint);}
+  .header-arrow{
+    display:grid;place-items:center;width:1.9rem;height:1.9rem;color:var(--ink-soft);
+    transition:transform .18s ease, color .18s ease;
+  }
+  .header-arrow:hover{color:var(--blue);transform:translate(2px,-2px);}
+
+  /* ---------- hero ---------- */
+  .hero{position:relative;padding:2.75rem 0 0;overflow:hidden;}
+  .hero-blob{
+    position:absolute;top:-70px;left:-4%;width:108%;height:clamp(260px,42vw,420px);
+    background:linear-gradient(100deg, var(--blue) 0%, transparent 40%, transparent 60%, var(--amber) 100%);
+    filter:blur(70px);opacity:.55;transform:rotate(-6deg);border-radius:45%;
+    pointer-events:none;z-index:0;
+  }
+  .hero-blob::after{
+    content:'';position:absolute;inset:0;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    opacity:.3;mix-blend-mode:overlay;
+  }
+  .hero-content{position:relative;z-index:1;max-width:620px;padding:1.5rem 0 2.5rem;}
+  .hero-eyebrow{
+    font-family:var(--body);font-size:.75rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft);
+    margin-bottom:1.5rem;
+  }
+  .hero-title{
+    font-family:var(--display);font-weight:700;text-transform:uppercase;
+    font-size:clamp(2.6rem,7vw,4.4rem);line-height:.98;letter-spacing:-.01em;text-wrap:balance;
+    animation:rise-in .6s cubic-bezier(.2,.8,.2,1) both;
+  }
+  @keyframes rise-in{0%{opacity:0;transform:translateY(14px);}100%{opacity:1;transform:translateY(0);}}
+  @media (prefers-reduced-motion: reduce){ .hero-title{animation:none;} }
+  .hero-sub{margin-top:1.5rem;font-size:1rem;color:var(--ink-soft);max-width:48ch;line-height:1.65;}
+  .hero-actions{margin-top:2.25rem;}
+  .btn-primary{
+    display:inline-flex;align-items:center;gap:.55rem;
+    padding:.85rem 1.6rem;border-radius:999px;
+    background:var(--ink);color:var(--contrast);
+    font-family:var(--display);font-size:.8rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+    text-decoration:none;border:none;cursor:pointer;
+    transition:transform .15s ease, background .15s ease;
+  }
+  .btn-primary:hover{background:#fff;transform:translateY(-1px);}
+  .hero-caption-row{
+    position:relative;z-index:1;
+    display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap;
+    padding:1.15rem 0;border-top:1px solid var(--line-soft);
+    font-family:var(--body);font-size:.72rem;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-faint);
+    font-variant-numeric:tabular-nums;
+  }
+
+  /* ---------- catalog ---------- */
+  .catalog{padding:2.75rem 0 4rem;}
+  .section-title{
+    font-family:var(--display);font-weight:700;font-size:1.4rem;letter-spacing:.02em;text-transform:uppercase;
+    margin-bottom:.65rem;
+  }
+  .section-sub{color:var(--ink-soft);font-size:.95rem;margin-bottom:1.9rem;max-width:56ch;}
+  .deck-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:1rem;}
+  @media (max-width:600px){ .deck-grid{grid-template-columns:1fr;} }
+  .deck-card{
+    position:relative;overflow:hidden;
+    display:flex;flex-direction:column;gap:1.15rem;
+    min-height:150px;padding:1.35rem 1.4rem;border-radius:16px;
+    background:var(--surface);
+    border:1px solid var(--line-soft);
+    transition:border-color .18s ease, transform .18s ease;
+  }
+  .deck-card::before{
+    content:'';position:absolute;top:-35%;right:-18%;width:60%;height:60%;
+    border-radius:50%;filter:blur(50px);opacity:.28;z-index:0;pointer-events:none;
+    background:var(--blue);
+  }
+  .deck-card:nth-child(even)::before{background:var(--amber);}
+  .deck-card:hover,.deck-card:focus-within{transform:translateY(-2px);border-color:var(--line);}
+  .deck-open{
+    all:unset;cursor:pointer;display:flex;flex-direction:column;gap:1rem;width:100%;
+    position:relative;z-index:1;
+  }
+  .deck-open-top{display:flex;align-items:center;justify-content:space-between;gap:.75rem;}
+  .deck-open-arrow{font-size:.9rem;color:var(--ink-faint);transition:color .18s ease, transform .18s ease;}
+  .deck-card:hover .deck-open-arrow,.deck-card:focus-within .deck-open-arrow{
+    color:var(--blue);transform:translateX(2px);
+  }
+  .deck-tag{
+    font-family:var(--body);font-size:.68rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
+    color:var(--blue);
+  }
+  .deck-info{display:flex;flex-direction:column;gap:.5rem;}
+  .deck-info .deck-name{
+    display:block;text-transform:uppercase;
+    font-family:var(--display);font-weight:700;font-size:1.02rem;color:var(--ink);letter-spacing:.01em;
+  }
+  .deck-info .deck-desc{
+    display:block;
+    font-family:var(--body);font-size:.86rem;color:var(--ink-soft);line-height:1.5;
+  }
+  .deck-progress{display:flex;flex-direction:column;gap:.6rem;position:relative;z-index:1;}
+  .deck-progress-track{height:5px;border-radius:3px;background:var(--surface-strong);overflow:hidden;}
+  .deck-progress-fill{
+    height:100%;border-radius:3px;width:0%;
+    background:linear-gradient(90deg,var(--blue),var(--amber));
+    transition:width .4s cubic-bezier(.2,.8,.2,1);
+  }
+  @media (prefers-reduced-motion: reduce){ .deck-progress-fill{transition:none;} }
+  .deck-progress-row{display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex-wrap:wrap;}
+  .deck-progress-label{
+    font-family:var(--body);font-size:.72rem;font-weight:600;letter-spacing:.05em;text-transform:uppercase;
+    color:var(--ink-faint);font-variant-numeric:tabular-nums;
+  }
+  .deck-progress-label.is-complete{color:var(--amber);}
+  .deck-restart-mini{
+    all:unset;cursor:pointer;
+    font-family:var(--body);font-size:.66rem;font-weight:600;letter-spacing:.05em;text-transform:uppercase;
+    color:var(--ink-faint);
+    padding:.35rem .7rem;border-radius:999px;border:1px solid var(--line-soft);
+    transition:border-color .15s ease, color .15s ease;
+  }
+  .deck-restart-mini:hover{border-color:var(--amber);color:var(--amber);}
+
+  /* ---------- study ---------- */
+  .study{padding:2.5rem 0 4rem;}
+  .study-bar{
+    display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;
+    margin-bottom:1.5rem;
+  }
+  .link-back{
+    all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:.4rem;
+    font-family:var(--body);font-size:.78rem;font-weight:600;letter-spacing:.03em;text-transform:uppercase;color:var(--ink-soft);
+    padding:.4rem .2rem;
+  }
+  .link-back:hover{color:var(--blue);}
+  .study-deck-name{
+    font-family:var(--display);font-weight:700;font-size:.95rem;letter-spacing:.03em;text-transform:uppercase;
+  }
+  .study-progress{
+    font-family:var(--body);font-size:.75rem;font-weight:600;letter-spacing:.03em;text-transform:uppercase;
+    color:var(--ink-faint);font-variant-numeric:tabular-nums;
+  }
+  .progress-track{height:4px;border-radius:2px;background:var(--surface-strong);overflow:hidden;margin-bottom:2.25rem;}
+  .progress-fill{
+    height:100%;border-radius:2px;background:linear-gradient(90deg,var(--blue),var(--amber));
+    transition:width .25s ease;
+  }
+
+  .study-desk{display:flex;flex-direction:column;align-items:center;gap:1.75rem;padding:1rem 0;}
+
+  .card-stage{perspective:1800px;width:100%;max-width:480px;}
+  .flashcard{all:unset;display:block;width:100%;aspect-ratio:5/3.3;min-height:260px;cursor:pointer;}
+  .flashcard-inner{
+    position:relative;width:100%;height:100%;transform-style:preserve-3d;
+    transition:transform .5s cubic-bezier(.2,.8,.2,1);
+  }
+  @media (prefers-reduced-motion: reduce){ .flashcard-inner{transition:none;} }
+  .flashcard-inner.flipped{transform:rotateY(180deg);}
+  .face{
+    position:absolute;inset:0;border-radius:18px;overflow:hidden;
+    background:var(--surface);border:1px solid var(--line-soft);
+    box-shadow:0 18px 44px var(--shadow);
+    backface-visibility:hidden;-webkit-backface-visibility:hidden;
+    padding:1.9rem 1.7rem 1.6rem;
+    display:flex;flex-direction:column;
+  }
+  .face::before{
+    content:'';position:absolute;bottom:-25%;right:-15%;width:55%;height:55%;
+    border-radius:50%;filter:blur(60px);opacity:.16;z-index:0;pointer-events:none;
+  }
+  .face-front::before{background:var(--blue);}
+  .face-back::before{background:var(--amber);}
+  .face-back{transform:rotateY(180deg);}
+  .face-label{
+    position:relative;z-index:1;align-self:flex-start;
+    font-family:var(--body);font-size:.68rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
+    color:var(--blue);margin-bottom:1.1rem;
+  }
+  .face-back .face-label{color:var(--amber);}
+  .face-text{
+    position:relative;z-index:1;
+    font-family:var(--display);font-weight:600;font-size:1.2rem;line-height:1.42;color:var(--ink);
+    flex:1;overflow-y:auto;letter-spacing:-.005em;
+  }
+  .face-back .face-text{font-family:var(--body);font-weight:400;font-size:1rem;line-height:1.65;}
+  .tap-hint{
+    position:relative;z-index:1;
+    font-family:var(--body);font-size:.7rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase;
+    color:var(--ink-faint);margin-top:1rem;
+  }
+
+  .flip-btn{
+    all:unset;cursor:pointer;
+    font-family:var(--display);font-size:.8rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;
+    padding:.7rem 1.5rem;border-radius:999px;
+    border:1px solid var(--line-soft);color:var(--ink-soft);
+    transition:border-color .15s ease, color .15s ease;
+  }
+  .flip-btn:hover{border-color:var(--ink);color:var(--ink);}
+
+  .rating-row{display:flex;gap:.9rem;flex-wrap:wrap;justify-content:center;}
+  .stamp{
+    all:unset;cursor:pointer;
+    font-family:var(--display);font-weight:700;font-size:.8rem;letter-spacing:.05em;text-transform:uppercase;
+    padding:.75rem 1.4rem;border-radius:999px;border:1.5px solid;
+    transition:background .15s ease, color .15s ease, transform .12s ease;
+  }
+  .stamp:active{transform:scale(.96);}
+  @media (prefers-reduced-motion: reduce){ .stamp{transition:none;} .stamp:active{transform:none;} }
+  .stamp-mastered{color:var(--blue);border-color:var(--blue);}
+  .stamp-mastered:hover{background:var(--blue);color:#fff;}
+  .stamp-review{color:var(--amber);border-color:var(--amber);}
+  .stamp-review:hover{background:var(--amber);color:var(--contrast);}
+
+  .study-complete{text-align:center;max-width:420px;padding:1rem 0;}
+  .study-complete h3:focus{outline:none;}
+  .study-complete h3{
+    font-family:var(--display);font-size:1.4rem;font-weight:700;letter-spacing:.02em;text-transform:uppercase;
+    margin-bottom:.75rem;
+  }
+  .complete-tally{
+    font-family:var(--body);font-size:.9rem;font-weight:500;color:var(--ink-soft);
+    display:flex;gap:1.5rem;justify-content:center;margin-bottom:1.75rem;flex-wrap:wrap;
+  }
+  .complete-tally b{color:var(--ink);font-weight:700;font-variant-numeric:tabular-nums;}
+  .complete-actions{display:flex;gap:.85rem;justify-content:center;flex-wrap:wrap;}
+  .btn-ghost{
+    all:unset;cursor:pointer;
+    font-family:var(--display);font-size:.76rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;
+    padding:.7rem 1.4rem;border-radius:999px;border:1px solid var(--line-soft);color:var(--ink-soft);
+  }
+  .btn-ghost:hover{border-color:var(--ink);color:var(--ink);}
+  .btn-solid{
+    all:unset;cursor:pointer;
+    font-family:var(--display);font-size:.76rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;
+    padding:.7rem 1.4rem;border-radius:999px;border:none;
+    background:var(--ink);color:var(--contrast);
+  }
+  .btn-solid:hover{background:#fff;}
+
+  .deck-open:focus-visible,
+  .deck-restart-mini:focus-visible,
+  .link-back:focus-visible,
+  .flashcard:focus-visible,
+  .flip-btn:focus-visible,
+  .stamp:focus-visible,
+  .btn-ghost:focus-visible,
+  .btn-solid:focus-visible,
+  .footer-reset:focus-visible{
+    outline:2px solid var(--focus);outline-offset:3px;
+  }
+  .deck-restart-mini:focus-visible,
+  .flip-btn:focus-visible,
+  .stamp:focus-visible,
+  .btn-ghost:focus-visible,
+  .btn-solid:focus-visible{
+    outline-offset:2px;
+  }
+
+  [hidden]{display:none !important;}
+
+  .site-footer{
+    border-top:1px solid var(--line-soft);
+    padding:1.5rem 0 2.75rem;
+    color:var(--ink-faint);font-size:.82rem;line-height:1.6;
+  }
+  .footer-disclaimer{max-width:58ch;}
+  .footer-credit{
+    margin-top:1.1rem;display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;
+    font-family:var(--body);font-size:.83rem;color:var(--ink-soft);
+  }
+  .footer-credit a{color:var(--ink-soft);text-decoration:underline;text-decoration-color:var(--line-soft);text-underline-offset:2px;}
+  .footer-credit a:hover{color:var(--blue);text-decoration-color:var(--blue);}
+  .footer-credit .sep{color:var(--line-soft);}
+  .footer-reset{
+    all:unset;cursor:pointer;
+    margin-top:1.1rem;display:inline-block;
+    font-family:var(--body);font-size:.72rem;font-weight:600;letter-spacing:.05em;text-transform:uppercase;
+    color:var(--ink-faint);text-decoration:underline;text-decoration-color:var(--line-soft);text-underline-offset:2px;
+  }
+  .footer-reset:hover{color:var(--amber);text-decoration-color:var(--amber);}
+</style>
+
+<div class="page">
+  <header class="site-header">
+    <div class="wordmark"><span class="wordmark-prep">Prep</span><span class="wordmark-ledger">Ledger</span></div>
+    <a class="header-arrow" href="#catalog" aria-label="Open the catalog">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <path d="M6 18L18 6M18 6H9M18 6V15" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </a>
+  </header>
+
+  <main id="main-view">
+    <section class="hero" id="top">
+      <div class="hero-blob" aria-hidden="true"></div>
+      <div class="hero-content">
+        <p class="hero-eyebrow">Field notes for business &amp; finance interviews</p>
+        <h1 class="hero-title">Flip the card.<br>Know the numbers.</h1>
+        <p class="hero-sub">PrepLedger drills the SQL, financial-statement, valuation, and Excel fundamentals that come up in business and finance interviews and technical screens, one card, one concept, at a time.</p>
+        <div class="hero-actions">
+          <a href="#catalog" class="btn-primary">Open the catalog &#8599;</a>
+        </div>
+      </div>
+      <div class="hero-caption-row">
+        <span>Portfolio project &middot; 2026</span>
+        <span>12 decks &middot; 108 cards</span>
+      </div>
+    </section>
+
+    <section class="catalog" id="catalog">
+      <h2 class="section-title">The catalog</h2>
+      <p class="section-sub">Every card is written from scratch: no scraped questions, no affiliation with any course or employer. Pick a deck to start.</p>
+      <div class="deck-grid" id="deck-grid"></div>
+    </section>
+  </main>
+
+  <section class="study" id="study" hidden>
+    <div class="study-bar">
+      <button class="link-back" id="back-btn">&larr; Back to catalog</button>
+      <div class="study-deck-name" id="study-deck-name"></div>
+      <div class="study-progress" id="study-progress" aria-live="polite"></div>
+    </div>
+    <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
+
+    <div class="study-desk">
+      <div class="card-stage" id="card-stage">
+        <button class="flashcard" id="flashcard" aria-pressed="false">
+          <div class="flashcard-inner" id="flashcard-inner">
+            <div class="face face-front">
+              <span class="face-label">Question</span>
+              <p class="face-text" id="card-front-text"></p>
+              <span class="tap-hint">Tap to flip</span>
+            </div>
+            <div class="face face-back">
+              <span class="face-label">Answer</span>
+              <p class="face-text" id="card-back-text"></p>
+            </div>
+          </div>
+        </button>
+      </div>
+
+      <div class="rating-row" id="rating-row" hidden>
+        <button class="stamp stamp-review" id="review-btn">Review again</button>
+        <button class="stamp stamp-mastered" id="mastered-btn">Mastered</button>
+      </div>
+      <button class="flip-btn" id="flip-btn">Flip card</button>
+
+      <div class="study-complete" id="study-complete" hidden>
+        <h3 id="complete-heading" tabindex="-1">Deck complete.</h3>
+        <div class="complete-tally">
+          <span>Mastered: <b id="tally-mastered">0</b></span>
+          <span>To review: <b id="tally-review">0</b></span>
+        </div>
+        <div class="complete-actions">
+          <button class="btn-ghost" id="restart-btn">Restart deck</button>
+          <button class="btn-solid" id="catalog-btn">Back to catalog</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="site-footer">
+    <p class="footer-disclaimer">PrepLedger is an independent portfolio project. All flashcard content is originally written and is not affiliated with, endorsed by, or sourced from any university, employer, or prep platform.</p>
+    <p class="footer-credit">
+      <span>Built by Lourenço Wang</span>
+      <span class="sep">&middot;</span>
+      <a href="mailto:wanglourenco@gmail.com">Email</a>
+      <span class="sep">&middot;</span>
+      <a href="https://www.linkedin.com/in/louren%C3%A7o-wang-764155388/" target="_blank" rel="noopener">LinkedIn</a>
+    </p>
+    <button class="footer-reset" id="reset-progress-btn">Reset study progress</button>
+  </footer>
+</div>
+
+<script>
+(function(){
+  var decks = [
+    {
+      id:'sql', tag:'SQL', name:'SQL Fundamentals',
+      description:'The queries that show up in every technical screen.',
+      cards:[
+        {q:'What’s the difference between INNER JOIN and LEFT JOIN?',
+         a:'An INNER JOIN returns only rows that have a match in both tables, so anything without a matching row on either side is dropped. A LEFT JOIN keeps every row from the left (first) table regardless of whether it matches, filling in NULLs for the right table’s columns when there’s no match. Use LEFT JOIN when you need to preserve every record from your main table, e.g. every customer, even ones who haven’t placed an order yet.'},
+        {q:'What does GROUP BY actually do, and why do non-aggregated columns need to be in it?',
+         a:'GROUP BY collapses rows that share the same value in one or more columns into a single summary row, so aggregate functions like SUM, COUNT, or AVG can be applied to each group. Any column in the SELECT list that isn’t being aggregated has to appear in the GROUP BY clause, because the database needs to know exactly which value to show for that column once hundreds of rows are folded into one.'},
+        {q:'What’s the difference between WHERE and HAVING?',
+         a:'WHERE filters individual rows before any grouping happens, so it can’t reference an aggregate like SUM(sales). HAVING filters groups after GROUP BY has run, which is why it’s the clause used for something like “only show regions where total sales exceed $1M.”'},
+        {q:'What can a window function do that a plain GROUP BY can’t?',
+         a:'A window function (e.g. SUM(...) OVER (PARTITION BY ...)) calculates an aggregate across a set of related rows without collapsing them into one row per group: every original row is kept, with a calculated column added alongside it. That’s what allows a running total, a rank within each category, or a moving average, none of which a GROUP BY can produce alone.'},
+        {q:'What’s the difference between a primary key and a foreign key?',
+         a:'A primary key uniquely identifies each row in its own table: no two rows can share one, and it can’t be NULL. A foreign key is a column in one table that references a primary key in another table, which is how relational databases enforce that a relationship (like an order pointing to a real customer) actually exists.'},
+        {q:'How would you find duplicate rows in a table?',
+         a:'Group the table by the columns that should be unique, count how many rows fall into each group with COUNT(*), then filter with HAVING COUNT(*) > 1 to surface only the groups with more than one row; those are the duplicates.'},
+        {q:'What does COALESCE do?',
+         a:'COALESCE takes a list of values and returns the first one that isn’t NULL, which makes it useful for supplying a fallback: for example, COALESCE(discount, 0) treats a missing discount as zero instead of letting NULL break a calculation downstream.'},
+        {q:'What’s the difference between UNION and UNION ALL?',
+         a:'Both stack the results of two queries on top of each other, but UNION removes duplicate rows from the combined result (which requires an extra sort/comparison step), while UNION ALL keeps every row, duplicates included, and runs faster because it skips that de-duplication work.'},
+        {q:'How do you calculate a running total in SQL?',
+         a:'Use a window function: SUM(amount) OVER (ORDER BY date) adds up the amount column cumulatively as it moves through the rows in date order, producing a running total column alongside the original data without collapsing any rows.'}
+      ]
+    },
+    {
+      id:'statements', tag:'Statements', name:'Reading Financial Statements',
+      description:'How the income statement, balance sheet, and cash flow statement fit together.',
+      cards:[
+        {q:'What are the three core financial statements, and how do they connect?',
+         a:'The income statement shows profitability over a period (revenue minus expenses equals net income). The balance sheet shows financial position at a single point in time (assets, liabilities, and equity). The cash flow statement shows how cash actually moved during that period. They connect because net income flows into the cash flow statement and into retained earnings on the balance sheet, tying all three together.'},
+        {q:'What’s the key difference between the balance sheet and the income statement in terms of time?',
+         a:'The income statement covers a period, a quarter or a year, showing what happened during that stretch. The balance sheet is a snapshot at one exact moment, showing what the company owns and owes as of that date, the way a photo captures a single instant rather than a stretch of time.'},
+        {q:'What is working capital, and how is it calculated?',
+         a:'Working capital measures short-term liquidity: current assets minus current liabilities. Positive working capital means a company can cover its near-term obligations with assets it can convert to cash relatively quickly; a shrinking or negative figure is often an early warning sign of cash flow trouble.'},
+        {q:'Why can cash flow and net income diverge, even in the same period?',
+         a:'Net income includes non-cash items like depreciation and counts revenue as soon as it’s earned rather than when cash arrives (accrual accounting). Cash flow only counts money that has actually moved. A company can show a healthy profit on paper while its cash balance falls, if customers haven’t paid yet or cash is tied up in inventory.'},
+        {q:'What are the three sections of the cash flow statement?',
+         a:'Operating activities (cash generated or used by core business operations), investing activities (cash spent on or received from things like equipment or acquisitions), and financing activities (cash from debt, equity raises, dividends, or buybacks). Together they explain exactly why the cash balance changed over the period.'},
+        {q:'How does depreciation affect the income statement differently than the cash flow statement?',
+         a:'Depreciation reduces net income on the income statement because it’s recorded as an expense, even though no cash actually leaves the business that period. On the cash flow statement it gets added back in the operating section, since the goal there is to reflect real cash movement, not accounting expense.'},
+        {q:'What is the accounting equation?',
+         a:'Assets = Liabilities + Equity. Everything a company owns (assets) was funded either by borrowing (liabilities) or by owners’ investment and retained profit (equity), and the balance sheet has to balance to this equation at all times.'},
+        {q:'What does accrual accounting mean, and how is it different from cash accounting?',
+         a:'Accrual accounting records revenue when it’s earned and expenses when they’re incurred, regardless of when cash changes hands: a sale made on credit counts as revenue immediately. Cash accounting only records a transaction when cash physically moves. Most real companies use accrual accounting because it matches revenue to the period it was actually generated in.'},
+        {q:'What is EBITDA, and why do analysts use it?',
+         a:'EBITDA stands for earnings before interest, taxes, depreciation, and amortization, essentially operating profit before the effects of financing decisions and non-cash accounting charges. Analysts use it to compare operating performance across companies with different capital structures or tax situations, since it strips out those differences.'}
+      ]
+    },
+    {
+      id:'valuation', tag:'Valuation', name:'Valuation Basics',
+      description:'DCF, comps, and the multiples analysts actually use.',
+      cards:[
+        {q:'What is a DCF, and why do we discount future cash flows?',
+         a:'A DCF estimates what a company is worth today by projecting its future free cash flows and discounting them back to present value using a discount rate, usually the WACC. Future cash is discounted because a dollar received later is worth less than a dollar today: it carries risk, and that same dollar could be earning a return elsewhere in the meantime. The final value is the sum of the discounted projected cash flows plus a terminal value, which covers everything beyond the projection window and is itself discounted back to present value using the same rate.'},
+        {q:'What is WACC, and what does it represent?',
+         a:'WACC (weighted average cost of capital) is the blended rate a company pays to fund itself, combining the after-tax cost of debt and the cost of equity, weighted by how much of each the company actually uses. Debt is counted on an after-tax basis because interest payments are tax-deductible, which makes debt effectively cheaper than its stated interest rate. WACC is used as the discount rate in a DCF because it represents the minimum return the company’s investments need to clear to be worth funding.'},
+        {q:'What is “terminal value” in a DCF?',
+         a:'Terminal value estimates everything a business will generate beyond the explicit forecast period (usually only 5–10 years), since companies are assumed to keep operating indefinitely. It’s typically the single largest component of a DCF’s total value, which is why the assumptions behind it (a long-run growth rate, or an exit multiple) matter so much.'},
+        {q:'What is comparable company analysis (“comps”)?',
+         a:'Comps value a company by looking at how the market currently prices similar, publicly traded companies (typically using ratios like EV/EBITDA or P/E) and applying that same multiple to the company being valued. It’s a relative valuation method: instead of building a value from scratch like a DCF does, it anchors to what the market is already paying for similar businesses.'},
+        {q:'What does EV/EBITDA measure, and why use enterprise value instead of just market cap?',
+         a:'EV/EBITDA compares a company’s total enterprise value to its operating earnings before interest, taxes, depreciation, and amortization. Enterprise value is used instead of market cap because it also accounts for debt and cash, making it possible to compare companies fairly even when they have very different capital structures: market cap alone ignores how much of the business is funded by debt.'},
+        {q:'What’s the difference between enterprise value and equity value?',
+         a:'Enterprise value represents the value of the whole business: what it would cost to acquire the company outright, including taking on its debt and stripping out its cash. Equity value is just the value belonging to shareholders (what market cap represents). Enterprise value = equity value + debt − cash.'},
+        {q:'What is a P/E ratio, and what does a high P/E typically signal?',
+         a:'The price-to-earnings ratio divides a company’s share price by its earnings per share, showing how much investors are paying for each dollar of current profit. A high P/E usually signals that the market expects strong future earnings growth; in some cases, it simply means the stock is overvalued relative to its fundamentals.'},
+        {q:'What is precedent transactions analysis, and how does it differ from comps?',
+         a:'Precedent transactions value a company based on prices actually paid in past M&A deals for similar businesses, rather than how similar companies currently trade on public markets. Because acquisitions usually include a control premium, precedent transaction multiples tend to run higher than trading comps.'},
+        {q:'Why does a valuation usually get presented as a range (a “football field”) rather than a single number?',
+         a:'Every valuation method rests on assumptions (growth rates, discount rates, which comps are truly comparable) and small changes in those assumptions can shift the output meaningfully. Presenting a range across multiple methods (DCF, comps, precedent transactions) is more honest about that uncertainty than pretending a single precise number is correct.'}
+      ]
+    },
+    {
+      id:'excel', tag:'Excel', name:'Excel & Data Analysis',
+      description:'The functions and habits behind a clean model.',
+      cards:[
+        {q:'What does a pivot table do?',
+         a:'A pivot table summarizes a large dataset by letting you drag fields into rows, columns, and values to instantly regroup and aggregate the data: turning thousands of raw rows into a compact summary, like total sales by region by month, without writing any formulas.'},
+        {q:'What’s the difference between VLOOKUP and INDEX/MATCH?',
+         a:'VLOOKUP searches for a value in the leftmost column of a range and returns a value from a column to its right, but it can only look rightward and breaks if columns get inserted. INDEX/MATCH separates the “where” (MATCH finds the row) from the “what” (INDEX returns the value), which lets it look in either direction and stays more stable when the sheet’s structure changes.'},
+        {q:'What’s the difference between a relative and an absolute cell reference?',
+         a:'A relative reference (like A1) shifts automatically when a formula is copied to a new cell. An absolute reference (like $A$1) stays locked to that exact cell no matter where the formula is copied: essential when a formula needs to keep pointing at one fixed value, like a tax rate or exchange rate held in a single cell.'},
+        {q:'What is conditional formatting, and when is it useful?',
+         a:'Conditional formatting automatically changes a cell’s appearance (color, font, icon) based on rules applied to its value, like highlighting any expense over budget in red. It turns a plain grid of numbers into something you can scan visually and immediately spot outliers or exceptions in.'},
+        {q:'What is data validation used for in a spreadsheet?',
+         a:'Data validation restricts what can be entered into a cell (a dropdown list, a number range, a date format), which prevents bad or inconsistent data from getting into a model in the first place, rather than cleaning it up afterward.'},
+        {q:'What can SUMIFS or COUNTIFS do that SUM or COUNT can’t?',
+         a:'SUM and COUNT operate on an entire range with no conditions. SUMIFS and COUNTIFS let you sum or count only the rows that meet one or more criteria at once (for example, summing revenue only where the region is “EMEA” and the quarter is “Q1”) without needing a pivot table or a filtered copy of the data.'},
+        {q:'What does “data cleaning” typically involve?',
+         a:'Data cleaning means fixing a dataset before it’s analyzed: removing duplicate rows, standardizing inconsistent formats (like “NY” vs “New York”), handling missing values, and correcting obvious errors. It matters because even a well-built model produces misleading output if the underlying data is inconsistent.'},
+        {q:'What’s the difference between structured and unstructured data?',
+         a:'Structured data fits neatly into rows and columns with a defined format, like a spreadsheet or a SQL table, which makes it easy to query and analyze directly. Unstructured data (emails, PDFs, images, free-text notes) has no predefined format and usually needs to be processed or extracted before it can be analyzed the same way.'},
+        {q:'What is a “helper column,” and why use one?',
+         a:'A helper column is an extra column added purely to break a complex calculation into a simpler intermediate step: not part of the final output, but there to make a formula easier to build, audit, and debug rather than cramming all the logic into one unreadable nested formula.'}
+      ]
+    },
+    {
+      id:'corpfin', tag:'Corporate Finance', name:'Corporate Finance & Investment Basics',
+      description:'Time value of money, NPV, IRR, and how companies decide where to put capital.',
+      cards:[
+        {q:'What is the time value of money, and why does it matter?',
+         a:'Money available now is worth more than the same amount in the future, because it can be invested to earn a return, and because of risk and inflation eroding future purchasing power. It’s the foundational idea behind discounting, NPV, and virtually every valuation method, since it explains why a dollar today and a dollar in five years aren’t directly comparable without adjustment.'},
+        {q:'What is Net Present Value (NPV), and how is it used to decide on a project?',
+         a:'NPV sums the present value of a project’s expected future cash flows, discounted back at the company’s cost of capital, then subtracts the initial investment. A positive NPV means the project is expected to create value above the cost of capital, so the standard rule is to accept projects with positive NPV and reject those with negative NPV.'},
+        {q:'What is the Internal Rate of Return (IRR)?',
+         a:'IRR is the discount rate at which a project’s NPV equals exactly zero, essentially the project’s own break-even rate of return. It’s compared against a company’s required rate of return to decide if a project clears the bar: if IRR is higher, the project is generally worth pursuing.'},
+        {q:'What is the payback period, and what’s its main limitation?',
+         a:'The payback period measures how long it takes for a project’s cumulative cash flows to recover the initial investment. Its main limitation is that it ignores the time value of money and any cash flows that happen after the payback point, which is why it’s usually used alongside NPV or IRR rather than on its own.'},
+        {q:'What is capital structure?',
+         a:'Capital structure describes how a company funds its operations and growth: the mix of debt and equity it uses. The choice affects a company’s cost of capital, risk profile, and financial flexibility, since debt is generally cheaper but adds fixed repayment obligations, while equity has no repayment obligation but is more expensive and dilutes ownership.'},
+        {q:'What is the difference between a bond and a stock, at a basic level?',
+         a:'A bond is a loan an investor makes to a company or government, which promises to pay back the principal plus periodic interest (coupons) on a fixed schedule. A stock represents partial ownership in a company, with no promised repayment, and its value depends on the company’s future performance and how the market prices that.'},
+        {q:'What does “cost of capital” mean, intuitively?',
+         a:'Cost of capital is the return a company must offer to attract funding, whether from lenders (cost of debt) or shareholders (cost of equity), reflecting the risk investors are taking on. It functions as a hurdle rate: any investment the company makes needs to earn more than this just to be worth doing.'},
+        {q:'What is diversification, and why does it reduce risk?',
+         a:'Diversification means spreading investment across multiple assets whose returns don’t move perfectly together, so a loss in one is likely offset by stability or gains in others. Because not all assets react the same way to the same events, a diversified portfolio typically has lower overall volatility than any single holding within it.'},
+        {q:'What is the difference between systematic and unsystematic risk?',
+         a:'Systematic risk affects the entire market, like interest rate changes or a recession, and can’t be diversified away. Unsystematic risk is specific to a single company or industry, like a product recall or a lawsuit, and can be reduced or eliminated by holding a diversified portfolio.'}
+      ]
+    },
+    {
+      id:'stats', tag:'Statistics', name:'Statistics & Data Analysis for Business',
+      description:'The core statistical concepts behind sound, defensible business analysis.',
+      cards:[
+        {q:'What’s the difference between mean, median, and mode, and when does it matter which one you use?',
+         a:'The mean is the average of all values, the median is the middle value when sorted, and the mode is the most frequent value. The choice matters because the mean is sensitive to outliers, a few extreme values can pull it far from what’s typical, while the median better represents a “typical” value in skewed data, like income or house prices.'},
+        {q:'What does standard deviation tell you?',
+         a:'Standard deviation measures how spread out a set of values is around the mean. A small standard deviation means values cluster tightly around the average, while a large one means they’re spread widely, which is why it’s often used alongside the mean to describe not just a typical value but how consistent or volatile the underlying data is.'},
+        {q:'What’s the difference between correlation and causation?',
+         a:'Correlation means two variables tend to move together, but that alone doesn’t prove one causes the other; there could be a third factor driving both, or the relationship could be coincidental. Causation means one variable’s change directly produces a change in the other, which usually requires controlled experimentation or careful statistical methods to establish, not just an observed pattern.'},
+        {q:'What is a p-value, in plain terms?',
+         a:'A p-value estimates the probability of seeing a result at least as extreme as the one observed, if there were actually no real effect at all. A small p-value, commonly below 0.05, suggests the observed result is unlikely to be due to chance alone, which is why it’s used as a threshold for deciding whether a result is “statistically significant.”'},
+        {q:'What is a confidence interval?',
+         a:'A confidence interval gives a range of plausible values for an unknown quantity, like a population average, based on sample data, rather than a single point estimate. A 95% confidence interval means that if the same sampling process were repeated many times, about 95% of the intervals produced would contain the true value.'},
+        {q:'What is regression analysis used for?',
+         a:'Regression analysis estimates the relationship between a dependent variable and one or more independent variables, letting you quantify how much the outcome is expected to change as an input changes. It’s widely used in business to forecast sales, estimate the impact of pricing or marketing spend, and identify which factors most strongly predict an outcome.'},
+        {q:'What is A/B testing?',
+         a:'A/B testing compares two versions of something, like a webpage or an email subject line, by randomly showing each version to different groups and measuring which performs better on a defined metric. Randomization is what makes the comparison fair, since it ensures the only systematic difference between the groups is the thing being tested.'},
+        {q:'What is sample bias, and why is it a problem?',
+         a:'Sample bias happens when the group of data collected isn’t representative of the population you’re trying to understand, so conclusions drawn from it don’t generalize. A classic example is surveying only existing customers about a new product, which misses the opinions of everyone who chose not to buy in the first place.'},
+        {q:'What’s the difference between descriptive and predictive analytics?',
+         a:'Descriptive analytics summarizes what has already happened in the data, like last quarter’s sales by region, while predictive analytics uses historical patterns to estimate what’s likely to happen next, like forecasting next quarter’s sales. Most business analysis starts with descriptive work before moving to predictive models.'}
+      ]
+    },
+    {
+      id:'strategy', tag:'Strategy', name:'Management & Strategy Frameworks',
+      description:'The core frameworks used to analyze markets, competitors, and business decisions.',
+      cards:[
+        {q:'What is a SWOT analysis?',
+         a:'SWOT stands for Strengths, Weaknesses, Opportunities, and Threats: strengths and weaknesses are internal to the organization, while opportunities and threats come from the external environment. It’s used as a simple structure for taking stock of a company’s position before making a strategic decision.'},
+        {q:'What are Porter’s Five Forces?',
+         a:'A framework for analyzing how competitive and attractive an industry is, based on five pressures: the threat of new entrants, the bargaining power of suppliers, the bargaining power of buyers, the threat of substitute products, and rivalry among existing competitors. Strong forces in most of these categories tend to squeeze industry profitability.'},
+        {q:'What is the BCG matrix?',
+         a:'A framework for categorizing a company’s products or business units by market growth rate and relative market share, into four categories: stars (high growth, high share), cash cows (low growth, high share), question marks (high growth, low share), and dogs (low growth, low share). It’s used to guide decisions about where to invest, maintain, or divest.'},
+        {q:'What does “economies of scale” mean?',
+         a:'Economies of scale describe how a company’s average cost per unit falls as it produces more, because fixed costs get spread across a larger output and larger volumes often unlock better terms from suppliers. It’s a key reason larger companies can often afford to compete on price in ways smaller companies can’t.'},
+        {q:'What is opportunity cost?',
+         a:'Opportunity cost is the value of the next-best alternative given up when a choice is made. It matters in business decision-making because the true cost of any decision isn’t just the money spent, it’s also whatever else that time, money, or resource could have been used for instead.'},
+        {q:'What’s the difference between a company’s mission and its strategy?',
+         a:'A mission statement describes why an organization exists and what it’s fundamentally trying to achieve, while strategy is the specific plan for how it will compete and allocate resources to get there. Mission tends to stay stable over long periods, while strategy adapts to changing markets and competition.'},
+        {q:'What is vertical integration?',
+         a:'Vertical integration is when a company takes ownership of additional stages of its supply chain, either backward by acquiring a supplier, or forward by acquiring a distributor or retailer. Companies pursue it to control costs, secure supply, or capture margin that would otherwise go to a partner.'},
+        {q:'What is a competitive advantage, and what are Michael Porter’s three generic strategies for achieving one?',
+         a:'A competitive advantage is something that lets a company outperform rivals over time. Porter described three generic strategies for achieving one: cost leadership, being the lowest-cost producer and competing on price; differentiation, offering something distinctly better that customers will pay a premium for; and focus, applying either of those advantages to a narrow market segment instead of the whole industry.'},
+        {q:'What does “economies of scope” mean, and how is it different from economies of scale?',
+         a:'Economies of scope describe cost savings a company gets from producing multiple related products together rather than separately, for example by sharing R&D, distribution, or manufacturing capacity across product lines. It’s different from economies of scale, which is about cost savings from producing more of the same thing.'}
+      ]
+    },
+    {
+      id:'accounting', tag:'Accounting', name:'Accounting Fundamentals',
+      description:'Debits, credits, and how the books actually get built.',
+      cards:[
+        {q:'What is double-entry bookkeeping?',
+         a:'Double-entry bookkeeping records every transaction in at least two accounts, one debit and one credit of equal value, so the accounting equation (Assets = Liabilities + Equity) always stays in balance. It’s the foundation of modern accounting because it creates a built-in check: if debits and credits don’t match, an error has been made somewhere.'},
+        {q:'What do “debit” and “credit” actually mean in accounting?',
+         a:'Debit and credit just mean the left and right side of an account, not “increase” and “decrease”: which one increases a given account depends on the account type. Debits increase assets and expenses (and decrease liabilities, equity, and revenue), while credits increase liabilities, equity, and revenue (and decrease assets and expenses).'},
+        {q:'What is a T-account?',
+         a:'A T-account is a simple visual tool for tracking the debits and credits in a single account, shaped like a T with the account name on top, debits recorded on the left, and credits on the right. It’s mainly used as a teaching and analysis tool to see how transactions flow through an account before they’re formally recorded in the ledger.'},
+        {q:'What is the difference between a journal entry and the general ledger?',
+         a:'A journal entry is the initial record of a transaction, listing the accounts debited and credited as it happens, in chronological order. The general ledger then organizes those entries by account, pulling every transaction that touched a given account, like “Cash” or “Revenue”, into one place so its running balance can be tracked.'},
+        {q:'What is an adjusting entry, and why is it needed at the end of a period?',
+         a:'An adjusting entry updates account balances at the end of an accounting period to reflect revenue that’s been earned or an expense that’s been incurred but not yet recorded, like accrued interest or a prepaid expense being used up. They’re needed because some transactions span multiple periods, and adjusting entries make sure revenue and expenses are recognized in the period they actually belong to.'},
+        {q:'What’s the difference between FIFO and LIFO inventory valuation?',
+         a:'FIFO (first in, first out) assumes the oldest inventory is sold first, so the cost of goods sold reflects older, often cheaper, costs. LIFO (last in, first out) assumes the newest inventory is sold first, so cost of goods sold reflects more recent, often higher, costs. The choice affects reported profit and inventory value, especially when prices are rising.'},
+        {q:'What is depreciation, and why is straight-line depreciation the simplest method?',
+         a:'Depreciation spreads the cost of a long-term asset, like equipment or a building, over its useful life instead of expensing the full cost the year it’s purchased, matching the expense to the periods the asset actually helps generate revenue. Straight-line depreciation is the simplest method, expensing an equal amount each year, which makes it easy to apply and forecast, even though it doesn’t reflect that some assets lose value faster early on.'},
+        {q:'What’s the difference between a contra account and a regular account?',
+         a:'A regular account increases with its natural balance, assets and expenses increase with debits, for example, while a contra account works in the opposite direction to reduce the balance of a related account it’s paired with. Accumulated depreciation is a common example: it’s paired with a fixed asset account and carries a credit balance that reduces the asset’s reported book value.'},
+        {q:'What is the difference between capitalizing a cost and expensing it?',
+         a:'Capitalizing a cost means recording it as an asset on the balance sheet and spreading it over time through depreciation or amortization, because it provides value beyond the current period, like buying equipment. Expensing a cost means recording the full amount immediately on the income statement, because it only benefits the current period, like paying for office supplies.'}
+      ]
+    },
+    {
+      id:'markets', tag:'Markets', name:'Financial Markets & Instruments',
+      description:'How stocks, bonds, and other instruments actually trade.',
+      cards:[
+        {q:'What’s the difference between a primary market and a secondary market?',
+         a:'In the primary market, a company sells new securities directly to investors for the first time, like in an IPO, and the company receives the proceeds. In the secondary market, investors trade those existing securities among themselves, like on the NYSE or Nasdaq, and the company that issued them isn’t a party to the trade.'},
+        {q:'What is an IPO?',
+         a:'An IPO, or initial public offering, is the process by which a private company sells shares to the public for the first time, becoming a publicly traded company in the process. It lets the company raise capital from a broad pool of investors, in exchange for giving up some ownership and taking on the reporting obligations of a public company.'},
+        {q:'What is a bond’s yield, and how does it relate to its price?',
+         a:'A bond’s yield is the return an investor earns from holding it, and it moves inversely to the bond’s price: when a bond’s price falls, its yield rises, because the same fixed coupon payments now represent a larger percentage return on the lower price paid. This inverse relationship is one of the most important mechanics in fixed income markets.'},
+        {q:'What does a bond’s credit rating tell an investor?',
+         a:'A credit rating, assigned by agencies like Moody’s or S&P, estimates how likely an issuer is to default on its debt, ranging from investment-grade (lower risk) to high-yield or “junk” (higher risk). Lower-rated bonds have to offer higher yields to compensate investors for taking on that additional risk.'},
+        {q:'What is the bid-ask spread?',
+         a:'The bid is the highest price a buyer is currently willing to pay for a security, and the ask is the lowest price a seller is willing to accept; the difference between them is the spread. A narrower spread generally signals a more liquid market with more buyers and sellers active, while a wider spread signals lower liquidity or higher uncertainty.'},
+        {q:'What is a market maker?',
+         a:'A market maker is a firm that continuously quotes both a bid and an ask price for a security, standing ready to buy or sell, which provides liquidity to the market. They profit from the bid-ask spread rather than from betting on which direction the price will move.'},
+        {q:'What is a derivative, and what are options and futures examples of?',
+         a:'A derivative is a financial contract whose value is derived from an underlying asset, like a stock, commodity, or index, rather than having value on its own. Options and futures are both examples: an option gives the holder the right, but not the obligation, to buy or sell the underlying asset at a set price, while a futures contract is an obligation to buy or sell it at a set price on a set future date.'},
+        {q:'What’s the difference between a call option and a put option?',
+         a:'A call option gives the holder the right to buy the underlying asset at a set price, the strike price, before the option expires, and is generally used when an investor expects the price to rise. A put option gives the holder the right to sell the underlying asset at the strike price, and is generally used when an investor expects the price to fall.'},
+        {q:'What is market capitalization?',
+         a:'Market capitalization is the total value of a company’s outstanding shares, calculated by multiplying the current share price by the number of shares outstanding. It’s commonly used to categorize companies by size, like large-cap, mid-cap, and small-cap, and to compare the relative size of publicly traded companies.'}
+      ]
+    },
+    {
+      id:'microecon', tag:'Microeconomics', name:'Microeconomics & Market Structures',
+      description:'Supply, demand, and how competition shapes a market.',
+      cards:[
+        {q:'What does the law of demand state?',
+         a:'The law of demand states that, all else equal, as the price of a good rises, the quantity demanded falls, and as price falls, quantity demanded rises, producing the familiar downward-sloping demand curve. It reflects that consumers generally substitute away from a good as it becomes relatively more expensive.'},
+        {q:'What is price elasticity of demand?',
+         a:'Price elasticity of demand measures how much quantity demanded changes in response to a change in price. Demand is “elastic” when a small price change causes a large change in quantity demanded, common for goods with close substitutes, and “inelastic” when quantity demanded barely responds to price changes, common for necessities with few substitutes.'},
+        {q:'What is equilibrium price?',
+         a:'Equilibrium price is the price at which the quantity of a good consumers want to buy exactly matches the quantity producers want to sell, so there’s no surplus or shortage. It’s found where the supply and demand curves intersect, and markets tend to move toward this price naturally over time.'},
+        {q:'What happens to equilibrium price and quantity when demand increases but supply stays the same?',
+         a:'When demand increases and supply is unchanged, the demand curve shifts to the right, which raises both the equilibrium price and the equilibrium quantity. More buyers want the good at every price point, so sellers can charge more while also selling more units.'},
+        {q:'What’s the difference between perfect competition and a monopoly?',
+         a:'In perfect competition, many firms sell identical products, no single firm can influence the market price, and firms are price takers. In a monopoly, a single firm is the only seller in the market, giving it significant control over price, typically resulting in higher prices and lower output than a competitive market would produce.'},
+        {q:'What is an oligopoly?',
+         a:'An oligopoly is a market structure dominated by a small number of large firms, where each firm’s decisions, like pricing, meaningfully affect its competitors and provoke a response. Airlines and wireless carriers are common real-world examples, since a handful of firms control most of the market in many countries.'},
+        {q:'What is marginal cost, and why does a firm compare it to marginal revenue?',
+         a:'Marginal cost is the cost of producing one additional unit of a good, and marginal revenue is the additional revenue earned from selling that unit. A profit-maximizing firm keeps producing as long as marginal revenue exceeds marginal cost, and stops at the point where they’re equal, since producing beyond that point would reduce total profit.'},
+        {q:'What is a barrier to entry?',
+         a:'A barrier to entry is anything that makes it difficult for a new firm to enter a market and compete with existing firms, such as high startup costs, patents, strong brand loyalty, or economies of scale that let incumbents produce more cheaply. High barriers to entry tend to result in less competitive markets with fewer firms.'},
+        {q:'What is consumer surplus?',
+         a:'Consumer surplus is the difference between what consumers are willing to pay for a good and what they actually pay, summed across all buyers in a market. It represents the extra value consumers get from a transaction, and it’s typically shown as the area between the demand curve and the market price.'}
+      ]
+    },
+    {
+      id:'marketing', tag:'Marketing', name:'Marketing Fundamentals',
+      description:'The core concepts behind how products get positioned and sold.',
+      cards:[
+        {q:'What are the “4 Ps” of marketing?',
+         a:'The 4 Ps, also called the marketing mix, are Product (what’s being sold), Price (what it costs), Place (where and how it’s distributed), and Promotion (how it’s communicated to customers). Together they form the core set of decisions a company makes when bringing a product to market.'},
+        {q:'What does STP stand for in marketing strategy?',
+         a:'STP stands for Segmentation, Targeting, and Positioning: segmentation divides a broad market into groups with similar needs, targeting selects which of those groups to focus on, and positioning defines how the product should be perceived relative to competitors in the mind of that target group.'},
+        {q:'What is brand equity?',
+         a:'Brand equity is the added value a brand name gives a product beyond its functional benefits, reflected in customers’ willingness to pay a premium, their loyalty, and their trust. A strong brand can charge more than an unbranded equivalent purely because of what the name signals.'},
+        {q:'What is customer lifetime value (CLV)?',
+         a:'Customer lifetime value estimates the total revenue or profit a business can expect from a single customer over the entire span of their relationship, not just their first purchase. It’s used to decide how much a company can reasonably spend to acquire a new customer while remaining profitable.'},
+        {q:'What does AIDA stand for, and what is it used for?',
+         a:'AIDA stands for Attention, Interest, Desire, and Action, a model describing the stages a customer moves through on the way to making a purchase. Marketers use it to structure campaigns and messaging so each stage moves the customer closer to converting.'},
+        {q:'What is market segmentation, and what are some common bases for it?',
+         a:'Market segmentation is the process of dividing a broad customer base into smaller groups that share similar characteristics or needs. Common bases include demographic (age, income), geographic (location), psychographic (lifestyle, values), and behavioral (purchase habits, brand loyalty).'},
+        {q:'What’s the difference between B2B and B2C marketing?',
+         a:'B2B (business-to-business) marketing sells to other companies, where purchase decisions are typically made by multiple stakeholders based on ROI and long sales cycles. B2C (business-to-consumer) marketing sells directly to individual consumers, where decisions are often faster and more influenced by emotion and price.'},
+        {q:'What is a value proposition?',
+         a:'A value proposition is a clear statement of the specific benefit a product delivers to its target customer and why it’s better than the alternatives available to them. It’s meant to answer the customer’s implicit question of why they should choose this product over anything else.'},
+        {q:'What is churn rate?',
+         a:'Churn rate measures the percentage of customers who stop doing business with a company over a given period, commonly used by subscription-based businesses to track retention. A high churn rate signals that a company is losing customers faster than is sustainable, even if it’s simultaneously acquiring new ones.'}
+      ]
+    },
+    {
+      id:'operations', tag:'Operations', name:'Operations & Supply Chain Management',
+      description:'How companies manage inventory, production, and the flow of goods.',
+      cards:[
+        {q:'What is the bullwhip effect in a supply chain?',
+         a:'The bullwhip effect describes how small fluctuations in customer demand get amplified into increasingly large swings in orders as they move upstream through a supply chain, from retailer to distributor to manufacturer. It happens because each link in the chain tends to over-adjust its own orders in response to the demand signals it sees, distorting the true underlying demand.'},
+        {q:'What is Just-In-Time (JIT) inventory management?',
+         a:'JIT is an inventory strategy where materials and components arrive only as they’re needed in the production process, rather than being stockpiled in advance. It reduces inventory holding costs and waste, but makes a company more vulnerable to supply chain disruptions, since there’s little buffer stock to fall back on.'},
+        {q:'What is Economic Order Quantity (EOQ)?',
+         a:'EOQ is a formula used to calculate the ideal order quantity that minimizes the total cost of ordering and holding inventory, balancing the fixed cost of placing an order against the cost of storing extra units. Ordering too little means paying ordering costs more often; ordering too much means paying more in storage and holding costs.'},
+        {q:'What is the difference between a push and a pull production system?',
+         a:'A push system produces goods based on demand forecasts, building inventory in advance of actual orders. A pull system produces goods only in response to actual customer demand as it occurs, which is the underlying logic behind JIT and reduces the risk of overproduction.'},
+        {q:'What is Six Sigma?',
+         a:'Six Sigma is a data-driven methodology for reducing defects and variability in a process, aiming for a level of quality where only about 3.4 defects occur per million opportunities. It’s commonly applied through a structured problem-solving cycle known as DMAIC: Define, Measure, Analyze, Improve, and Control.'},
+        {q:'What is lead time?',
+         a:'Lead time is the total time between when an order is placed and when it’s actually received or fulfilled, covering everything from processing and production to shipping. Shorter lead times generally let a company hold less safety stock while still meeting customer demand reliably.'},
+        {q:'What is capacity utilization?',
+         a:'Capacity utilization measures how much of a company’s total production capacity is actually being used, expressed as a percentage of maximum possible output. Low utilization can signal inefficiency or weak demand, while very high utilization can signal a company is at risk of bottlenecks if demand rises further.'},
+        {q:'What is safety stock, and why do companies hold it?',
+         a:'Safety stock is extra inventory held beyond expected demand, acting as a buffer against uncertainty in demand or supply, like an unexpected spike in orders or a delayed shipment. It reduces the risk of stockouts, but ties up capital and storage space, so companies balance it against the cost of holding extra inventory.'},
+        {q:'What is a bottleneck in a production process?',
+         a:'A bottleneck is the single stage in a process that has the lowest capacity, limiting the throughput of the entire system regardless of how efficient the other stages are. Improving a process usually starts by identifying and addressing the bottleneck, since speeding up any other stage won’t increase overall output.'}
+      ]
+    }
+  ];
+
+  var state = {deckIndex:0, cardIndex:0, flipped:false, mastered:0, review:0};
+
+  var PROGRESS_KEY = 'flashprep_progress_v1';
+
+  function loadProgress(){
+    try{
+      var raw = localStorage.getItem(PROGRESS_KEY);
+      return raw ? JSON.parse(raw) : {};
+    }catch(e){
+      return {};
+    }
+  }
+
+  function saveProgress(progress){
+    try{
+      localStorage.setItem(PROGRESS_KEY, JSON.stringify(progress));
+    }catch(e){
+      /* storage unavailable, e.g. private browsing; progress just won't persist */
+    }
+  }
+
+  var progress = loadProgress();
+
+  function deckMasteredCount(deck){
+    var deckProgress = progress[deck.id] || {};
+    var count = 0;
+    Object.keys(deckProgress).forEach(function(k){
+      if(deckProgress[k] === 'mastered'){ count++; }
+    });
+    return count;
+  }
+
+  function deckStudiedCount(deck){
+    return Object.keys(progress[deck.id] || {}).length;
+  }
+
+  function resetDeckProgress(deck, i){
+    delete progress[deck.id];
+    saveProgress(progress);
+    renderCatalog();
+    var card = els.deckGrid.children[i];
+    var focusTarget = card ? (card.querySelector('.deck-restart-mini') || card.querySelector('.deck-open')) : null;
+    if (focusTarget) focusTarget.focus();
+  }
+
+  var els = {
+    deckGrid: document.getElementById('deck-grid'),
+    mainView: document.getElementById('main-view'),
+    study: document.getElementById('study'),
+    backBtn: document.getElementById('back-btn'),
+    deckName: document.getElementById('study-deck-name'),
+    progressText: document.getElementById('study-progress'),
+    progressFill: document.getElementById('progress-fill'),
+    cardStage: document.getElementById('card-stage'),
+    flashcard: document.getElementById('flashcard'),
+    inner: document.getElementById('flashcard-inner'),
+    front: document.getElementById('card-front-text'),
+    back: document.getElementById('card-back-text'),
+    ratingRow: document.getElementById('rating-row'),
+    reviewBtn: document.getElementById('review-btn'),
+    masteredBtn: document.getElementById('mastered-btn'),
+    flipBtn: document.getElementById('flip-btn'),
+    complete: document.getElementById('study-complete'),
+    tallyMastered: document.getElementById('tally-mastered'),
+    tallyReview: document.getElementById('tally-review'),
+    restartBtn: document.getElementById('restart-btn'),
+    completeHeading: document.getElementById('complete-heading'),
+    catalogBtn: document.getElementById('catalog-btn'),
+    resetBtn: document.getElementById('reset-progress-btn')
+  };
+
+  function renderCatalog(){
+    els.deckGrid.innerHTML = '';
+    decks.forEach(function(deck, i){
+      var total = deck.cards.length;
+      var mastered = deckMasteredCount(deck);
+      var studied = deckStudiedCount(deck);
+      var pct = total ? Math.round((mastered / total) * 100) : 0;
+      var complete = total > 0 && mastered === total;
+      var label = complete
+        ? 'Completed'
+        : (mastered > 0 ? mastered + ' / ' + total + ' mastered' : total + ' cards');
+
+      var card = document.createElement('div');
+      card.className = 'deck-card';
+
+      var open = document.createElement('button');
+      open.className = 'deck-open';
+      open.type = 'button';
+      open.innerHTML =
+        '<span class="deck-open-top"><span class="deck-tag">' + deck.tag + '</span><span class="deck-open-arrow">&#8594;</span></span>' +
+        '<span class="deck-info"><span class="deck-name">' + deck.name + '</span>' +
+        '<span class="deck-desc">' + deck.description + '</span></span>';
+      open.addEventListener('click', function(){ openDeck(i); });
+      card.appendChild(open);
+
+      var progressWrap = document.createElement('div');
+      progressWrap.className = 'deck-progress';
+
+      var track = document.createElement('div');
+      track.className = 'deck-progress-track';
+      var fill = document.createElement('div');
+      fill.className = 'deck-progress-fill';
+      fill.style.width = pct + '%';
+      track.appendChild(fill);
+      progressWrap.appendChild(track);
+
+      var row = document.createElement('div');
+      row.className = 'deck-progress-row';
+      var labelEl = document.createElement('span');
+      labelEl.className = 'deck-progress-label' + (complete ? ' is-complete' : '');
+      labelEl.textContent = label;
+      row.appendChild(labelEl);
+
+      if(studied > 0){
+        var restartBtn = document.createElement('button');
+        restartBtn.className = 'deck-restart-mini';
+        restartBtn.type = 'button';
+        restartBtn.textContent = 'Restart deck';
+        restartBtn.addEventListener('click', function(){ resetDeckProgress(deck, i); });
+        row.appendChild(restartBtn);
+      }
+
+      progressWrap.appendChild(row);
+      card.appendChild(progressWrap);
+
+      els.deckGrid.appendChild(card);
+    });
+  }
+
+  function openDeck(i){
+    state.deckIndex = i;
+    state.cardIndex = 0;
+    state.mastered = 0;
+    state.review = 0;
+    els.mainView.hidden = true;
+    els.study.hidden = false;
+    els.complete.hidden = true;
+    els.cardStage.hidden = false;
+    els.flipBtn.hidden = false;
+    window.scrollTo({top:0, behavior:'auto'});
+    renderCard();
+    els.backBtn.focus();
+  }
+
+  function backToCatalog(){
+    var openedIndex = state.deckIndex;
+    els.study.hidden = true;
+    els.mainView.hidden = false;
+    renderCatalog();
+    var openedCard = els.deckGrid.children[openedIndex];
+    var openedBtn = openedCard ? openedCard.querySelector('.deck-open') : null;
+    if (openedBtn) openedBtn.focus();
+  }
+
+  function currentDeck(){ return decks[state.deckIndex]; }
+
+  function renderCard(){
+    var deck = currentDeck();
+    var card = deck.cards[state.cardIndex];
+    els.deckName.textContent = deck.name;
+    els.progressText.textContent = 'Card ' + (state.cardIndex + 1) + ' of ' + deck.cards.length;
+    var masteredNow = deckMasteredCount(deck);
+    els.progressFill.style.width = (deck.cards.length ? (masteredNow / deck.cards.length * 100) : 0) + '%';
+    els.front.textContent = card.q;
+    els.back.textContent = card.a;
+    state.flipped = false;
+    els.inner.classList.remove('flipped');
+    els.flashcard.setAttribute('aria-pressed', 'false');
+    els.ratingRow.hidden = true;
+  }
+
+  function flip(){
+    state.flipped = !state.flipped;
+    els.inner.classList.toggle('flipped', state.flipped);
+    els.flashcard.setAttribute('aria-pressed', String(state.flipped));
+    els.ratingRow.hidden = !state.flipped;
+    els.flipBtn.textContent = state.flipped ? 'Flip back' : 'Flip card';
+  }
+
+  function rate(type){
+    if(type === 'mastered'){ state.mastered++; } else { state.review++; }
+    var deck = currentDeck();
+    progress[deck.id] = progress[deck.id] || {};
+    progress[deck.id][state.cardIndex] = type;
+    saveProgress(progress);
+    if(state.cardIndex + 1 < deck.cards.length){
+      state.cardIndex++;
+      renderCard();
+    } else {
+      showComplete();
+    }
+  }
+
+  var resetArmed = false;
+  var resetArmTimer = null;
+
+  function resetProgress(){
+    if(!resetArmed){
+      resetArmed = true;
+      els.resetBtn.textContent = 'Click again to confirm';
+      resetArmTimer = setTimeout(function(){
+        resetArmed = false;
+        els.resetBtn.textContent = 'Reset study progress';
+      }, 3000);
+      return;
+    }
+    clearTimeout(resetArmTimer);
+    resetArmed = false;
+    els.resetBtn.textContent = 'Reset study progress';
+    progress = {};
+    saveProgress(progress);
+    renderCatalog();
+  }
+
+  function showComplete(){
+    var deck = currentDeck();
+    var masteredNow = deckMasteredCount(deck);
+    els.progressFill.style.width = (deck.cards.length ? (masteredNow / deck.cards.length * 100) : 0) + '%';
+    els.progressText.textContent = 'Complete';
+    els.cardStage.hidden = true;
+    els.flipBtn.hidden = true;
+    els.ratingRow.hidden = true;
+    els.tallyMastered.textContent = state.mastered;
+    els.tallyReview.textContent = state.review;
+    els.complete.hidden = false;
+    els.completeHeading.focus();
+  }
+
+  els.flashcard.addEventListener('click', flip);
+  els.flipBtn.addEventListener('click', flip);
+  els.reviewBtn.addEventListener('click', function(){ rate('review'); });
+  els.masteredBtn.addEventListener('click', function(){ rate('mastered'); });
+  els.backBtn.addEventListener('click', backToCatalog);
+  els.catalogBtn.addEventListener('click', backToCatalog);
+  els.restartBtn.addEventListener('click', function(){
+    var deck = currentDeck();
+    delete progress[deck.id];
+    saveProgress(progress);
+    openDeck(state.deckIndex);
+  });
+  els.resetBtn.addEventListener('click', resetProgress);
+
+  renderCatalog();
+})();
+</script>
