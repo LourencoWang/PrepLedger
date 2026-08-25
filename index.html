@@ -34,7 +34,7 @@
   ::selection{background:var(--blue);color:#fff;}
   :focus-visible{outline:2px solid var(--focus);outline-offset:3px;}
 
-  .page{max-width:920px;margin:0 auto;padding:0 1.5rem;}
+  .page{max-width:1200px;margin:0 auto;padding:0 1.5rem;}
 
   /* ---------- header ---------- */
   .site-header{
@@ -54,7 +54,10 @@
   .header-arrow:hover{color:var(--blue);transform:translate(2px,-2px);}
 
   /* ---------- hero ---------- */
-  .hero{position:relative;padding:2.75rem 0 0;overflow:hidden;}
+  .hero{
+    position:relative;padding:2.75rem 0 0;overflow:hidden;
+    width:100vw;margin-left:calc(50% - 50vw);
+  }
   .hero-blob{
     position:absolute;top:-70px;left:-4%;width:108%;height:clamp(260px,42vw,420px);
     background:linear-gradient(100deg, var(--blue) 0%, transparent 40%, transparent 60%, var(--amber) 100%);
@@ -66,6 +69,7 @@
     background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
     opacity:.3;mix-blend-mode:overlay;
   }
+  .hero-inner{max-width:1200px;margin:0 auto;padding:0 1.5rem;}
   .hero-content{position:relative;z-index:1;max-width:620px;padding:1.5rem 0 2.5rem;}
   .hero-eyebrow{
     font-family:var(--body);font-size:.75rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft);
@@ -165,6 +169,24 @@
     transition:border-color .15s ease, color .15s ease;
   }
   .deck-restart-mini:hover{border-color:var(--amber);color:var(--amber);}
+
+  /* ---------- deck intro ---------- */
+  .deck-intro{padding:2.75rem 0 4rem;}
+  .intro-inner{max-width:640px;}
+  .intro-inner h2:focus{outline:none;}
+  .intro-inner .deck-tag{margin-top:1.75rem;display:inline-block;}
+  .intro-title{
+    font-family:var(--display);font-weight:800;font-size:clamp(1.6rem,4vw,2.3rem);letter-spacing:-.01em;
+    line-height:1.15;text-transform:uppercase;margin-top:.6rem;
+  }
+  .intro-text{
+    margin-top:1.25rem;font-family:var(--body);font-size:1.02rem;line-height:1.7;color:var(--ink-soft);
+  }
+  .intro-meta{
+    margin-top:1.5rem;font-family:var(--body);font-size:.72rem;font-weight:600;letter-spacing:.07em;text-transform:uppercase;
+    color:var(--ink-faint);font-variant-numeric:tabular-nums;
+  }
+  .intro-inner .btn-primary{margin-top:2rem;}
 
   /* ---------- study ---------- */
   .study{padding:2.5rem 0 4rem;}
@@ -339,17 +361,19 @@
   <main id="main-view">
     <section class="hero" id="top">
       <div class="hero-blob" aria-hidden="true"></div>
-      <div class="hero-content">
-        <p class="hero-eyebrow">Field notes for business &amp; finance interviews</p>
-        <h1 class="hero-title">Flip the card.<br>Know the numbers.</h1>
-        <p class="hero-sub">PrepLedger drills the SQL, financial-statement, valuation, and Excel fundamentals that come up in business and finance interviews and technical screens, one card, one concept, at a time.</p>
-        <div class="hero-actions">
-          <a href="#catalog" class="btn-primary">Open the catalog &#8599;</a>
+      <div class="hero-inner">
+        <div class="hero-content">
+          <p class="hero-eyebrow">Field notes for business &amp; finance interviews</p>
+          <h1 class="hero-title">Flip the card.<br>Know the numbers.</h1>
+          <p class="hero-sub">PrepLedger drills the SQL, financial-statement, valuation, and Excel fundamentals that come up in business and finance interviews and technical screens, one card, one concept, at a time.</p>
+          <div class="hero-actions">
+            <a href="#catalog" class="btn-primary">Open the catalog &#8599;</a>
+          </div>
         </div>
-      </div>
-      <div class="hero-caption-row">
-        <span>Portfolio project &middot; 2026</span>
-        <span>12 decks &middot; 108 cards</span>
+        <div class="hero-caption-row">
+          <span>Portfolio project &middot; 2026</span>
+          <span>12 decks &middot; 108 cards</span>
+        </div>
       </div>
     </section>
 
@@ -359,6 +383,17 @@
       <div class="deck-grid" id="deck-grid"></div>
     </section>
   </main>
+
+  <section class="deck-intro" id="deck-intro" hidden>
+    <div class="intro-inner">
+      <button class="link-back" id="intro-back-btn">&larr; Back to catalog</button>
+      <p class="deck-tag" id="intro-tag"></p>
+      <h2 class="intro-title" id="intro-title" tabindex="-1"></h2>
+      <p class="intro-text" id="intro-text"></p>
+      <div class="intro-meta" id="intro-card-count"></div>
+      <button class="btn-primary" id="intro-start-btn">Start studying &#8599;</button>
+    </div>
+  </section>
 
   <section class="study" id="study" hidden>
     <div class="study-bar">
@@ -424,6 +459,7 @@
     {
       id:'sql', tag:'SQL', name:'SQL Fundamentals',
       description:'The queries that show up in every technical screen.',
+      intro:'SQL is the language used to pull and shape data out of a database, and it shows up constantly in technical screens for data, finance, and analyst roles, sometimes as a live coding exercise, sometimes as a question about how a query would behave. If you have never written a query before, that is completely normal at this stage: this deck starts from what a table and a query actually are, then builds up to the join types and grouping logic interviewers actually test. Think of it less as memorizing syntax and more as learning to read a data question and know which SQL concept it is really asking about.',
       cards:[
         {q:'What’s the difference between INNER JOIN and LEFT JOIN?',
          a:'An INNER JOIN returns only rows that have a match in both tables, so anything without a matching row on either side is dropped. A LEFT JOIN keeps every row from the left (first) table regardless of whether it matches, filling in NULLs for the right table’s columns when there’s no match. Use LEFT JOIN when you need to preserve every record from your main table, e.g. every customer, even ones who haven’t placed an order yet.'},
@@ -448,6 +484,7 @@
     {
       id:'statements', tag:'Statements', name:'Reading Financial Statements',
       description:'How the income statement, balance sheet, and cash flow statement fit together.',
+      intro:'Every finance and consulting interview eventually touches the three financial statements, the income statement, balance sheet, and cash flow statement, because they are how a business actually gets described in numbers. This deck is built for someone who has never opened a company’s annual report: it walks through what each statement shows, why they exist as three separate documents instead of one, and how a single transaction ripples across all three. By the end, you should be able to hear "walk me through the financial statements" and actually enjoy answering it.',
       cards:[
         {q:'What are the three core financial statements, and how do they connect?',
          a:'The income statement shows profitability over a period (revenue minus expenses equals net income). The balance sheet shows financial position at a single point in time (assets, liabilities, and equity). The cash flow statement shows how cash actually moved during that period. They connect because net income flows into the cash flow statement and into retained earnings on the balance sheet, tying all three together.'},
@@ -472,6 +509,7 @@
     {
       id:'valuation', tag:'Valuation', name:'Valuation Basics',
       description:'DCF, comps, and the multiples analysts actually use.',
+      intro:'Valuation is the skill of putting a number on what a company or investment is actually worth, and it is one of the most commonly tested topics in finance interviews, from "walk me through a DCF" to "how would you value this company." This deck introduces the core methods, discounted cash flow, comparable companies, and the multiples analysts lean on, in plain language first, then in the more technical form interviewers expect. No prior valuation experience assumed, just a willingness to think in terms of cash flow and comparison.',
       cards:[
         {q:'What is a DCF, and why do we discount future cash flows?',
          a:'A DCF estimates what a company is worth today by projecting its future free cash flows and discounting them back to present value using a discount rate, usually the WACC. Future cash is discounted because a dollar received later is worth less than a dollar today: it carries risk, and that same dollar could be earning a return elsewhere in the meantime. The final value is the sum of the discounted projected cash flows plus a terminal value, which covers everything beyond the projection window and is itself discounted back to present value using the same rate.'},
@@ -496,6 +534,7 @@
     {
       id:'excel', tag:'Excel', name:'Excel & Data Analysis',
       description:'The functions and habits behind a clean model.',
+      intro:'Excel is the quiet backbone of almost every business and finance role, and interviewers use it as a proxy for whether you can actually build and check a model, not just talk about one. This deck covers the functions, habits, and data-cleaning logic that come up again and again, pivot tables, lookups, and the kind of small decisions that separate a clean spreadsheet from a fragile one. If your Excel experience is mostly basic formulas so far, this is exactly the right starting point.',
       cards:[
         {q:'What does a pivot table do?',
          a:'A pivot table summarizes a large dataset by letting you drag fields into rows, columns, and values to instantly regroup and aggregate the data: turning thousands of raw rows into a compact summary, like total sales by region by month, without writing any formulas.'},
@@ -520,6 +559,7 @@
     {
       id:'corpfin', tag:'Corporate Finance', name:'Corporate Finance & Investment Basics',
       description:'Time value of money, NPV, IRR, and how companies decide where to put capital.',
+      intro:'This deck is about how companies actually decide where to put their money, using ideas like the time value of money, net present value, and internal rate of return. These concepts sound abstract until you realize interviewers use them to test whether you can reason about a decision the way a finance team actually would. Expect a mix of "what does this term mean" and "how would you use it to make a call," both of which come up in real interviews.',
       cards:[
         {q:'What is the time value of money, and why does it matter?',
          a:'Money available now is worth more than the same amount in the future, because it can be invested to earn a return, and because of risk and inflation eroding future purchasing power. It’s the foundational idea behind discounting, NPV, and virtually every valuation method, since it explains why a dollar today and a dollar in five years aren’t directly comparable without adjustment.'},
@@ -544,6 +584,7 @@
     {
       id:'stats', tag:'Statistics', name:'Statistics & Data Analysis for Business',
       description:'The core statistical concepts behind sound, defensible business analysis.',
+      intro:'Most business and data roles do not expect you to be a statistician, but they do expect you to reason clearly about numbers: what an average actually tells you, when a sample might be misleading, how confident you can really be in a conclusion. This deck focuses on the statistical concepts that come up in business contexts specifically, not abstract math theory, so the framing stays close to how you would actually use it in an interview or on the job. No statistics background required to start.',
       cards:[
         {q:'What’s the difference between mean, median, and mode, and when does it matter which one you use?',
          a:'The mean is the average of all values, the median is the middle value when sorted, and the mode is the most frequent value. The choice matters because the mean is sensitive to outliers, a few extreme values can pull it far from what’s typical, while the median better represents a “typical” value in skewed data, like income or house prices.'},
@@ -568,6 +609,7 @@
     {
       id:'strategy', tag:'Strategy', name:'Management & Strategy Frameworks',
       description:'The core frameworks used to analyze markets, competitors, and business decisions.',
+      intro:'Case interviews and strategy conversations lean heavily on a small set of well-known frameworks, SWOT, Porter’s five forces, the kind of tools that give structure to a messy business question. This deck introduces each one from scratch: what it is for, when it actually applies, and the trap of using it as a checklist instead of a thinking tool. If you have never used a strategy framework before, this is designed to get you comfortable enough to reach for the right one under pressure.',
       cards:[
         {q:'What is a SWOT analysis?',
          a:'SWOT stands for Strengths, Weaknesses, Opportunities, and Threats: strengths and weaknesses are internal to the organization, while opportunities and threats come from the external environment. It’s used as a simple structure for taking stock of a company’s position before making a strategic decision.'},
@@ -592,6 +634,7 @@
     {
       id:'accounting', tag:'Accounting', name:'Accounting Fundamentals',
       description:'Debits, credits, and how the books actually get built.',
+      intro:'Accounting is the record-keeping system behind every financial statement, and understanding it, even at a basic level, makes everything else in finance click into place faster. This deck starts from the actual mechanics: what double-entry bookkeeping means, how debits and credits work, and how the books get built up from a single transaction. It is written for someone who has never taken an accounting class, not as a shortcut around learning it, but as a clear first pass.',
       cards:[
         {q:'What is double-entry bookkeeping?',
          a:'Double-entry bookkeeping records every transaction in at least two accounts, one debit and one credit of equal value, so the accounting equation (Assets = Liabilities + Equity) always stays in balance. It’s the foundation of modern accounting because it creates a built-in check: if debits and credits don’t match, an error has been made somewhere.'},
@@ -616,6 +659,7 @@
     {
       id:'markets', tag:'Markets', name:'Financial Markets & Instruments',
       description:'How stocks, bonds, and other instruments actually trade.',
+      intro:'This deck covers how stocks, bonds, and other financial instruments actually trade, the difference between where a security is first issued and where it changes hands afterward, and the basic mechanics behind the markets you hear about in the news. It is aimed at giving you enough grounding to talk about markets confidently in an interview, not at making you a trader. No assumed background beyond general curiosity about how finance works.',
       cards:[
         {q:'What’s the difference between a primary market and a secondary market?',
          a:'In the primary market, a company sells new securities directly to investors for the first time, like in an IPO, and the company receives the proceeds. In the secondary market, investors trade those existing securities among themselves, like on the NYSE or Nasdaq, and the company that issued them isn’t a party to the trade.'},
@@ -640,6 +684,7 @@
     {
       id:'microecon', tag:'Microeconomics', name:'Microeconomics & Market Structures',
       description:'Supply, demand, and how competition shapes a market.',
+      intro:'Interviewers in business, strategy, and even product roles often lean on basic economic reasoning: supply and demand, how competition shapes pricing, what happens when a market has only a few players instead of many. This deck builds those ideas up from first principles, so if the words "market structure" currently mean nothing to you, that is exactly who this is for. The goal is to be able to reason through an economic scenario out loud, not recite a textbook definition.',
       cards:[
         {q:'What does the law of demand state?',
          a:'The law of demand states that, all else equal, as the price of a good rises, the quantity demanded falls, and as price falls, quantity demanded rises, producing the familiar downward-sloping demand curve. It reflects that consumers generally substitute away from a good as it becomes relatively more expensive.'},
@@ -664,6 +709,7 @@
     {
       id:'marketing', tag:'Marketing', name:'Marketing Fundamentals',
       description:'The core concepts behind how products get positioned and sold.',
+      intro:'Marketing questions show up in more interviews than people expect, not just marketing roles, but general business and case interviews that touch product or strategy. This deck covers the core vocabulary and frameworks, like the four Ps, that give you a structured way to talk about how a product actually gets positioned, priced, and sold. Written for someone starting from zero, with an emphasis on frameworks you can actually apply to a real example on the spot.',
       cards:[
         {q:'What are the “4 Ps” of marketing?',
          a:'The 4 Ps, also called the marketing mix, are Product (what’s being sold), Price (what it costs), Place (where and how it’s distributed), and Promotion (how it’s communicated to customers). Together they form the core set of decisions a company makes when bringing a product to market.'},
@@ -688,6 +734,7 @@
     {
       id:'operations', tag:'Operations', name:'Operations & Supply Chain Management',
       description:'How companies manage inventory, production, and the flow of goods.',
+      intro:'Operations questions test a different kind of thinking than finance ones: how a business actually moves inventory, manages production, and keeps a supply chain from breaking under pressure. This deck introduces the core concepts, like the bullwhip effect, through simple explanations first, building toward the vocabulary interviewers expect you to use fluently. No operations background needed, just a willingness to think about a business as a physical system, not just a spreadsheet.',
       cards:[
         {q:'What is the bullwhip effect in a supply chain?',
          a:'The bullwhip effect describes how small fluctuations in customer demand get amplified into increasingly large swings in orders as they move upstream through a supply chain, from retailer to distributor to manufacturer. It happens because each link in the chain tends to over-adjust its own orders in response to the demand signals it sees, distorting the true underlying demand.'},
@@ -779,7 +826,14 @@
     restartBtn: document.getElementById('restart-btn'),
     completeHeading: document.getElementById('complete-heading'),
     catalogBtn: document.getElementById('catalog-btn'),
-    resetBtn: document.getElementById('reset-progress-btn')
+    resetBtn: document.getElementById('reset-progress-btn'),
+    introSection: document.getElementById('deck-intro'),
+    introBackBtn: document.getElementById('intro-back-btn'),
+    introTag: document.getElementById('intro-tag'),
+    introTitle: document.getElementById('intro-title'),
+    introText: document.getElementById('intro-text'),
+    introCardCount: document.getElementById('intro-card-count'),
+    introStartBtn: document.getElementById('intro-start-btn')
   };
 
   function renderCatalog(){
@@ -804,7 +858,7 @@
         '<span class="deck-open-top"><span class="deck-tag">' + deck.tag + '</span><span class="deck-open-arrow">&#8594;</span></span>' +
         '<span class="deck-info"><span class="deck-name">' + deck.name + '</span>' +
         '<span class="deck-desc">' + deck.description + '</span></span>';
-      open.addEventListener('click', function(){ openDeck(i); });
+      open.addEventListener('click', function(){ showDeckIntro(i); });
       card.appendChild(open);
 
       var progressWrap = document.createElement('div');
@@ -841,11 +895,26 @@
     });
   }
 
+  function showDeckIntro(i){
+    state.deckIndex = i;
+    var deck = decks[i];
+    els.introTag.textContent = deck.tag;
+    els.introTitle.textContent = deck.name;
+    els.introText.textContent = deck.intro;
+    els.introCardCount.textContent = deck.cards.length + ' cards in this deck';
+    els.mainView.hidden = true;
+    els.study.hidden = true;
+    els.introSection.hidden = false;
+    window.scrollTo({top:0, behavior:'auto'});
+    els.introBackBtn.focus();
+  }
+
   function openDeck(i){
     state.deckIndex = i;
     state.cardIndex = 0;
     state.mastered = 0;
     state.review = 0;
+    els.introSection.hidden = true;
     els.mainView.hidden = true;
     els.study.hidden = false;
     els.complete.hidden = true;
@@ -859,6 +928,7 @@
   function backToCatalog(){
     var openedIndex = state.deckIndex;
     els.study.hidden = true;
+    els.introSection.hidden = true;
     els.mainView.hidden = false;
     renderCatalog();
     var openedCard = els.deckGrid.children[openedIndex];
@@ -946,6 +1016,8 @@
   els.masteredBtn.addEventListener('click', function(){ rate('mastered'); });
   els.backBtn.addEventListener('click', backToCatalog);
   els.catalogBtn.addEventListener('click', backToCatalog);
+  els.introBackBtn.addEventListener('click', backToCatalog);
+  els.introStartBtn.addEventListener('click', function(){ openDeck(state.deckIndex); });
   els.restartBtn.addEventListener('click', function(){
     var deck = currentDeck();
     delete progress[deck.id];
