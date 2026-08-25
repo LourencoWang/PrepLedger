@@ -14,6 +14,7 @@
     --surface-strong:rgba(255,255,255,0.07);
     --blue:#4C7CF0;
     --amber:#E2952E;
+    --green:#4FAE7A;
     --contrast:#08080A;
     --shadow:rgba(0,0,0,0.55);
     --focus:#82A4FF;
@@ -217,6 +218,8 @@
 
   .card-stage{-webkit-perspective:1800px;perspective:1800px;width:100%;max-width:480px;}
   .flashcard{all:unset;display:block;width:100%;aspect-ratio:5/3.3;min-height:260px;cursor:pointer;}
+  .flashcard.has-diagram{min-height:520px;}
+  .flashcard.has-diagram .face-front .face-text{display:flex;align-items:center;}
   .flashcard-inner{
     position:relative;width:100%;height:100%;
     -webkit-transform-style:preserve-3d;transform-style:preserve-3d;
@@ -254,6 +257,17 @@
     flex:1;overflow-y:auto;letter-spacing:-.005em;
   }
   .face-back .face-text{font-family:var(--body);font-weight:400;font-size:1rem;line-height:1.65;}
+  .face-takeaway{
+    font-family:var(--display);font-weight:700;font-size:1.05rem;line-height:1.4;color:var(--ink);
+    letter-spacing:-.005em;margin-bottom:.7rem;
+  }
+  .face-detail{
+    font-family:var(--body);font-weight:400;font-size:.94rem;line-height:1.6;color:var(--ink-soft);
+  }
+  .face-diagram{
+    position:relative;z-index:1;margin:.2rem 0 1rem;
+  }
+  .face-diagram svg{display:block;width:100%;height:auto;}
   .tap-hint{
     position:relative;z-index:1;
     font-family:var(--body);font-size:.7rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase;
@@ -474,7 +488,7 @@
             </div>
             <div class="face face-back">
               <span class="face-label">Answer</span>
-              <p class="face-text" id="card-back-text"></p>
+              <div class="face-text" id="card-back-text"></div>
             </div>
           </div>
         </button>
@@ -912,6 +926,29 @@
 
   function currentDeck(){ return decks[state.deckIndex]; }
 
+  function escapeHtml(str){
+    return String(str)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+
+  // Cards can either be plain {q, a} (rendered as before) or enriched with an
+  // optional {takeaway, image} on top of {q, a}: takeaway is a short bolded
+  // summary shown first, a becomes the supporting detail text, and image is
+  // trusted inline SVG markup authored as part of the deck content (never
+  // user-submitted), so it's safe to insert directly.
+  function renderBackFace(card){
+    if (!card.takeaway && !card.image){
+      els.back.textContent = card.a;
+      return;
+    }
+    var html = '';
+    if (card.image){ html += '<div class="face-diagram">' + card.image + '</div>'; }
+    if (card.takeaway){ html += '<div class="face-takeaway">' + escapeHtml(card.takeaway) + '</div>'; }
+    html += '<div class="face-detail">' + escapeHtml(card.a) + '</div>';
+    els.back.innerHTML = html;
+  }
+
   function renderCard(){
     var deck = currentDeck();
     var card = deck.cards[state.cardIndex];
@@ -920,7 +957,8 @@
     var masteredNow = deckMasteredCount(deck);
     els.progressFill.style.width = (deck.cards.length ? (masteredNow / deck.cards.length * 100) : 0) + '%';
     els.front.textContent = card.q;
-    els.back.textContent = card.a;
+    renderBackFace(card);
+    els.flashcard.classList.toggle('has-diagram', !!card.image);
     state.flipped = false;
     els.inner.classList.remove('flipped');
     els.flashcard.setAttribute('aria-pressed', 'false');
