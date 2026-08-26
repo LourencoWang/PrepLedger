@@ -583,6 +583,34 @@
 
   var state = {deckIndex:0, cardIndex:0, flipped:false, mastered:0, review:0, track:null};
 
+  // --- private, owner-only visit counter ---
+  // Logs one row per page load into a "visits" table (see setup SQL kept alongside this
+  // project's notes). No UI reads this back; it's purely for checking traffic yourself
+  // via the Supabase dashboard. visitor_id is a random id stored in this browser only,
+  // not tied to any account, and only used to tell total loads apart from unique browsers.
+  var VISITOR_ID_KEY = 'flashprep_visitor_id_v1';
+  function getVisitorId(){
+    try{
+      var id = localStorage.getItem(VISITOR_ID_KEY);
+      if (!id){
+        id = (window.crypto && crypto.randomUUID) ? crypto.randomUUID()
+          : 'v-' + Date.now() + '-' + Math.random().toString(36).slice(2);
+        localStorage.setItem(VISITOR_ID_KEY, id);
+      }
+      return id;
+    }catch(e){
+      return null; // storage unavailable (e.g. private browsing); skip tracking
+    }
+  }
+  function logVisit(){
+    if (!sb) return;
+    var visitorId = getVisitorId();
+    if (!visitorId) return;
+    sb.from('visits').insert({ visitor_id: visitorId })
+      .then(function(res){ if (res.error) console.error('logVisit:', res.error); })
+      .catch(function(err){ console.error('logVisit:', err); });
+  }
+
   var PROGRESS_KEY = 'flashprep_progress_v1';
 
   function loadProgress(){
@@ -1107,5 +1135,6 @@
   }
 
   init();
+  logVisit();
 })();
 </script>
