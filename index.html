@@ -123,9 +123,8 @@
   }
   .track-btn + .track-btn{border-left:1px solid var(--line-soft);}
   .track-btn:hover{color:var(--ink);}
-  .track-btn.is-active{background:var(--surface-strong);color:var(--ink);}
-  .track-btn[data-track="ib"].is-active{border-bottom-color:var(--blue);}
-  .track-btn[data-track="consulting"].is-active{border-bottom-color:var(--amber);}
+  .track-btn[data-track="ib"].is-active{background:var(--blue);color:var(--contrast);border-bottom-color:var(--blue);}
+  .track-btn[data-track="consulting"].is-active{background:var(--amber);color:var(--contrast);border-bottom-color:var(--amber);}
   .track-hint{
     color:var(--ink-faint);font-size:.9rem;padding:2.75rem 1rem;text-align:center;
     border:1px dashed var(--line-soft);border-radius:16px;
@@ -1133,7 +1132,7 @@
       })
       .then(function(data){
         decks = data;
-        renderCatalog();
+        setTrack('ib');
       })
       .catch(function(err){
         els.deckGrid.innerHTML = '<p style="color:var(--ink-soft);padding:.5rem 0;">Couldn&rsquo;t load the deck catalog right now. Please refresh the page, or try again in a moment.</p>';
