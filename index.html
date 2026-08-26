@@ -185,6 +185,16 @@
   .tracker-bar{
     display:flex;height:6px;border-radius:3px;overflow:hidden;background:var(--surface-strong);
   }
+  .tracker-note{
+    margin:1rem 0 0;font-family:var(--body);font-size:.8rem;line-height:1.5;
+    color:var(--ink-faint);display:flex;flex-wrap:wrap;gap:.35rem;align-items:baseline;
+  }
+  .link-inline{
+    all:unset;cursor:pointer;color:var(--blue);font-family:var(--body);font-size:.8rem;
+    text-decoration:underline;text-decoration-color:rgba(76,124,240,.4);text-underline-offset:2px;
+  }
+  .link-inline:hover{text-decoration-color:var(--blue);}
+  .link-inline:focus-visible{outline:2px solid var(--focus);outline-offset:3px;border-radius:3px;}
   .tracker-seg{display:block;height:100%;transition:width .3s ease;}
   @media (prefers-reduced-motion: reduce){ .tracker-seg{transition:none;} }
   .seg-again{background:var(--red);}
@@ -441,6 +451,17 @@
     font-family:var(--body);font-size:.88rem;color:var(--ink-soft);
     margin:-.85rem 0 1.6rem;line-height:1.55;
   }
+  .save-prompt{
+    margin:0 0 1.75rem;padding:1.15rem 1.25rem;border-radius:14px;
+    background:var(--surface);border:1px solid var(--line-soft);
+    display:flex;flex-direction:column;align-items:center;gap:.9rem;
+  }
+  .save-prompt-text{
+    margin:0;font-family:var(--body);font-size:.9rem;line-height:1.55;
+    color:var(--ink-soft);max-width:38ch;
+  }
+  .save-prompt-text b{color:var(--ink);font-weight:700;}
+
   .complete-actions{display:flex;gap:.85rem;justify-content:center;flex-wrap:wrap;}
   .btn-ghost{
     all:unset;cursor:pointer;
@@ -626,6 +647,10 @@
           <span class="tracker-seg seg-good" id="seg-good"></span>
           <span class="tracker-seg seg-easy" id="seg-easy"></span>
         </div>
+        <p class="tracker-note" id="tracker-note" hidden>
+          <span>Saved in this browser only.</span>
+          <button type="button" class="link-inline" id="tracker-save-btn">Make a free account to keep it across devices</button>
+        </p>
       </section>
       <p class="track-hint" id="track-hint">Pick a track above to see its decks.</p>
       <div class="deck-grid" id="deck-grid" hidden></div>
@@ -689,6 +714,10 @@
           <span>Good or better: <b id="tally-good">0</b></span>
         </div>
         <p class="complete-next" id="complete-next"></p>
+        <div class="save-prompt" id="save-prompt" hidden>
+          <p class="save-prompt-text" id="save-prompt-text"></p>
+          <button class="btn-solid" id="save-prompt-btn" type="button">Make a free account</button>
+        </div>
         <div class="complete-actions">
           <button class="btn-ghost" id="restart-btn">Restart deck</button>
           <button class="btn-solid" id="catalog-btn">Back to catalog</button>
@@ -1022,14 +1051,18 @@
   }
 
   function renderTracker(){
-    // Signed-out visitors still have local progress, but the tracker is framed as a
-    // reason to hold an account, so it's shown only when signed in.
-    if (!currentUser || !decks.length) { els.tracker.hidden = true; return; }
+    if (!decks.length) { els.tracker.hidden = true; return; }
     var s = overallStats();
+    // Shown to signed-out visitors too, once they have something to show. Hiding it
+    // until you hold an account makes the one real benefit of an account invisible to
+    // exactly the people who would need to see it.
+    if (!currentUser && !s.started) { els.tracker.hidden = true; return; }
     els.tracker.hidden = false;
     els.statAgain.textContent = s.again;
     els.statGood.textContent = s.good;
     els.statEasy.textContent = s.easy;
+    // Signed out, the honest thing to say is where this data actually lives.
+    els.trackerNote.hidden = !!currentUser;
     if (!s.started) {
       els.trackerSub.textContent = 'No cards studied yet';
     } else {
@@ -1071,6 +1104,11 @@
     statAgain: document.getElementById('stat-again'),
     statGood: document.getElementById('stat-good'),
     statEasy: document.getElementById('stat-easy'),
+    trackerNote: document.getElementById('tracker-note'),
+    trackerSaveBtn: document.getElementById('tracker-save-btn'),
+    savePrompt: document.getElementById('save-prompt'),
+    savePromptText: document.getElementById('save-prompt-text'),
+    savePromptBtn: document.getElementById('save-prompt-btn'),
     segAgain: document.getElementById('seg-again'),
     segGood: document.getElementById('seg-good'),
     segEasy: document.getElementById('seg-easy'),
@@ -1129,14 +1167,14 @@
   function updateAuthModalMode(){
     if (authMode === 'signin') {
       els.authTitle.textContent = 'Sign in';
-      els.authSub.textContent = 'Sign in to sync your study progress across devices.';
+      els.authSub.textContent = 'Pick your study progress back up on any device.';
       els.authSubmitBtn.textContent = 'Sign in';
-      els.authToggleBtn.textContent = 'Don’t have an account? Sign up';
+      els.authToggleBtn.textContent = 'No account yet? Create one, it’s free';
       els.authPassword.setAttribute('autocomplete', 'current-password');
     } else {
       els.authTitle.textContent = 'Create account';
-      els.authSub.textContent = 'Takes a few seconds, and it’s free.';
-      els.authSubmitBtn.textContent = 'Sign up';
+      els.authSub.textContent = 'Free, and it takes a few seconds. Without one, your progress lives in this browser only and disappears if you clear your history or switch device.';
+      els.authSubmitBtn.textContent = 'Create account';
       els.authToggleBtn.textContent = 'Already have an account? Sign in';
       els.authPassword.setAttribute('autocomplete', 'new-password');
     }
@@ -1146,9 +1184,11 @@
     if (e.key === 'Escape') { closeAuthModal(); }
   }
 
-  function openAuthModal(){
+  // mode: 'signin' (default) or 'signup'. The prompts that offer to save progress open
+  // straight into signup, since anyone arriving from them has no account yet.
+  function openAuthModal(mode){
     if (currentUser) { sb && sb.auth.signOut(); return; }
-    authMode = 'signin';
+    authMode = (mode === 'signup') ? 'signup' : 'signin';
     updateAuthModalMode();
     els.authError.hidden = true;
     els.authForm.reset();
@@ -1184,6 +1224,8 @@
     // Show the tracker straight away from local data. The remote load below may
     // refine the numbers or fail outright; either way the panel is already there.
     renderTracker();
+    // If they signed up from the end-of-session prompt, it has done its job.
+    els.savePrompt.hidden = true;
     // A session can also arrive without the form being submitted (e.g. a restored
     // session on load), so make sure the modal isn't left sitting open.
     if (!els.authOverlay.hidden) { closeAuthModal(); }
@@ -1215,7 +1257,10 @@
     if (decks.length) { renderCatalog(); }
   }
 
-  els.accountBtn.addEventListener('click', openAuthModal);
+  // Explicit wrapper: the raw listener would pass the click Event through as `mode`.
+  els.accountBtn.addEventListener('click', function(){ openAuthModal('signin'); });
+  els.trackerSaveBtn.addEventListener('click', function(){ openAuthModal('signup'); });
+  els.savePromptBtn.addEventListener('click', function(){ openAuthModal('signup'); });
   els.authCloseBtn.addEventListener('click', closeAuthModal);
   els.authOverlay.addEventListener('click', function(e){ if (e.target === els.authOverlay) { closeAuthModal(); } });
   els.authToggleBtn.addEventListener('click', function(){
@@ -1562,6 +1607,19 @@
     els.tallyTotal.textContent = reviewed;
     els.tallyAgain.textContent = state.tally.again;
     els.tallyGood.textContent = state.tally.good + state.tally.easy;
+
+    // Ask about an account only once a session has actually been done, and only for
+    // signed-out users. Below the threshold they haven't invested enough for the
+    // offer to mean anything, and asking anyway is just another site demanding a
+    // signup before it has been useful.
+    var SAVE_PROMPT_MIN_CARDS = 5;
+    if (!currentUser && reviewed >= SAVE_PROMPT_MIN_CARDS) {
+      els.savePromptText.innerHTML = 'You&rsquo;ve reviewed <b>' + reviewed +
+        ' cards</b>. Right now that&rsquo;s saved in this browser only. A free account keeps it if you close the tab or switch device.';
+      els.savePrompt.hidden = false;
+    } else {
+      els.savePrompt.hidden = true;
+    }
 
     if (reviewed === 0) {
       els.completeHeading.textContent = 'Nothing due right now.';
