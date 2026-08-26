@@ -352,10 +352,14 @@
   }
   .stamp-again{color:var(--red);border-color:var(--red);}
   .stamp-again:hover{background:var(--red);color:var(--contrast);}
-  .stamp-hard{color:var(--amber);border-color:var(--amber);}
-  .stamp-hard:hover{background:var(--amber);color:var(--contrast);}
-  .stamp-good{color:var(--blue);border-color:var(--blue);}
-  .stamp-good:hover{background:var(--blue);color:var(--contrast);}
+  /* Outline and label carry the colour; the interval and key hint stay neutral so
+     the button doesn't read as one solid block of yellow. */
+  .stamp-good{color:var(--amber);border-color:var(--amber);}
+  .stamp-good .stamp-interval,
+  .stamp-good .stamp-key{color:var(--ink-soft);opacity:1;}
+  .stamp-good:hover{background:var(--amber);color:var(--contrast);}
+  .stamp-good:hover .stamp-interval,
+  .stamp-good:hover .stamp-key{color:var(--contrast);opacity:.75;}
   .stamp-easy{color:var(--green);border-color:var(--green);}
   .stamp-easy:hover{background:var(--green);color:var(--contrast);}
   @media (max-width:600px){
@@ -584,14 +588,11 @@
         <button class="stamp stamp-again" id="again-btn" type="button">
           <span>Again</span><span class="stamp-interval" id="again-interval"></span><span class="stamp-key">1</span>
         </button>
-        <button class="stamp stamp-hard" id="hard-btn" type="button">
-          <span>Hard</span><span class="stamp-interval" id="hard-interval"></span><span class="stamp-key">2</span>
-        </button>
         <button class="stamp stamp-good" id="good-btn" type="button">
-          <span>Good</span><span class="stamp-interval" id="good-interval"></span><span class="stamp-key">3</span>
+          <span>Good</span><span class="stamp-interval" id="good-interval"></span><span class="stamp-key">2</span>
         </button>
         <button class="stamp stamp-easy" id="easy-btn" type="button">
-          <span>Easy</span><span class="stamp-interval" id="easy-interval"></span><span class="stamp-key">4</span>
+          <span>Easy</span><span class="stamp-interval" id="easy-interval"></span><span class="stamp-key">3</span>
         </button>
       </div>
       <button class="flip-btn" id="flip-btn">Flip card</button>
@@ -654,7 +655,7 @@
   var state = {
     deckIndex:0, cardIndex:0, flipped:false, track:null,
     queue:[], queuePos:0,
-    tally:{again:0, hard:0, good:0, easy:0}
+    tally:{again:0, good:0, easy:0}
   };
 
   // --- private, owner-only visit counter ---
@@ -691,37 +692,41 @@
   var PROGRESS_KEY = 'flashprep_progress_v2';
 
   var DAY_MS = 24 * 60 * 60 * 1000;
-  // A card counts as "mature" once it has held up for 3+ weeks, the usual
-  // spaced-repetition convention for "this is genuinely learned".
-  var MATURE_DAYS = 21;
+  // A card counts as "learned" once it has reached the longest box, i.e. the user
+  // answered Easy and it is now on the weekly rotation.
+  var MATURE_DAYS = 7;
 
-  // --- SM-2 spaced repetition ---
-  // quality: we use 1=Again, 3=Hard, 4=Good, 5=Easy. Standard SuperMemo SM-2, with
-  // one deliberate deviation: an "easy bonus" multiplier. In textbook SM-2 the next
-  // interval is interval*EF regardless of whether you pressed Good or Easy, so both
-  // buttons would preview the identical number of days and Easy would look broken.
-  // Every practical implementation (Anki included) applies a bonus; 1.3 is the
-  // conventional value.
-  var EASY_BONUS = 1.3;
+  // --- Review scheduling ---
+  //
+  // A fixed three-step schedule (a Leitner-style system): every card sits in one of
+  // three boxes and each answer moves it to that box outright, rather than the
+  // interval compounding from its own history. Chosen over an adaptive algorithm
+  // deliberately: this site is used over an 8-12 week interview run-up, where a card
+  // scheduled months out would simply never be seen again before the interview, and
+  // where a schedule the user can predict is easier to trust.
+  //
+  //   Again -> same day (also requeued later in the current session)
+  //   Good  -> 3 days
+  //   Easy  -> 1 week
+  //
+  // No licensed algorithm is involved; Leitner boxes long predate modern SRS software.
+  var QUALITY_AGAIN = 1;
+  var QUALITY_GOOD = 3;
+  var QUALITY_EASY = 5;
 
-  function sm2(card, quality){
-    var reps = card.reps, ef = card.ef, interval = card.interval;
-    if (quality < 3) {
-      reps = 0;
-      interval = 1;
-    } else {
-      if (reps === 0) { interval = quality === 5 ? 4 : 1; }
-      else if (reps === 1) { interval = quality === 5 ? Math.round(6 * EASY_BONUS) : 6; }
-      else {
-        interval = Math.round(interval * ef * (quality === 5 ? EASY_BONUS : 1));
-      }
-      reps += 1;
-    }
-    ef = ef + (0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02));
-    if (ef < 1.3) { ef = 1.3; }
-    // Guard against a rounding collapse on very short intervals.
-    if (interval < 1) { interval = 1; }
-    return { reps: reps, ef: ef, interval: interval };
+  var SCHEDULE = {};
+  SCHEDULE[QUALITY_AGAIN] = 0;
+  SCHEDULE[QUALITY_GOOD]  = 3;
+  SCHEDULE[QUALITY_EASY]  = 7;
+
+  function schedule(card, quality){
+    var interval = SCHEDULE[quality];
+    if (interval === undefined) { interval = 0; }
+    // reps counts successful answers in a row, and resets on Again. Nothing in the
+    // schedule depends on it; it is kept as a signal for the "learned" count and so
+    // the stored shape stays stable if the scheduling is ever revisited.
+    var reps = quality === QUALITY_AGAIN ? 0 : card.reps + 1;
+    return { reps: reps, ef: card.ef, interval: interval };
   }
 
   function newCardState(){
@@ -766,6 +771,8 @@
   function formatInterval(days){
     if (days <= 0) { return 'today'; }
     if (days === 1) { return '1 day'; }
+    if (days === 7) { return '1 week'; }
+    if (days === 14) { return '2 weeks'; }
     if (days < 21) { return Math.round(days) + ' days'; }
     if (days < 365) { return Math.round(days / 30) + ' mo'; }
     return (Math.round(days / 36.5) / 10) + ' yr';
@@ -775,6 +782,7 @@
     var days = Math.ceil((ms - Date.now()) / DAY_MS);
     if (days <= 0) { return 'now'; }
     if (days === 1) { return 'tomorrow'; }
+    if (days === 7) { return 'in a week'; }
     if (days < 30) { return 'in ' + days + ' days'; }
     if (days < 365) { return 'in ' + Math.round(days / 30) + ' months'; }
     return 'in ' + (Math.round(days / 36.5) / 10) + ' years';
@@ -928,11 +936,9 @@
     back: document.getElementById('card-back-text'),
     ratingRow: document.getElementById('rating-row'),
     againBtn: document.getElementById('again-btn'),
-    hardBtn: document.getElementById('hard-btn'),
     goodBtn: document.getElementById('good-btn'),
     easyBtn: document.getElementById('easy-btn'),
     againInterval: document.getElementById('again-interval'),
-    hardInterval: document.getElementById('hard-interval'),
     goodInterval: document.getElementById('good-interval'),
     easyInterval: document.getElementById('easy-interval'),
     completeNext: document.getElementById('complete-next'),
@@ -1243,7 +1249,7 @@
     state.queue = buildSession(decks[i], includeAll);
     state.queuePos = 0;
     state.cardIndex = state.queue.length ? state.queue[0] : 0;
-    state.tally = {again:0, hard:0, good:0, easy:0};
+    state.tally = {again:0, good:0, easy:0};
     els.introSection.hidden = true;
     els.mainView.hidden = true;
     els.study.hidden = false;
@@ -1298,9 +1304,8 @@
   function updateIntervalPreviews(){
     var deck = currentDeck();
     var current = getCardState(deck.id, state.cardIndex) || newCardState();
-    els.hardInterval.textContent = formatInterval(sm2(current, 3).interval);
-    els.goodInterval.textContent = formatInterval(sm2(current, 4).interval);
-    els.easyInterval.textContent = formatInterval(sm2(current, 5).interval);
+    els.goodInterval.textContent = formatInterval(schedule(current, QUALITY_GOOD).interval);
+    els.easyInterval.textContent = formatInterval(schedule(current, QUALITY_EASY).interval);
     els.againInterval.textContent = 'today';
   }
 
@@ -1336,7 +1341,7 @@
     var deck = currentDeck();
     var cardIdx = state.cardIndex;
     var current = getCardState(deck.id, cardIdx) || newCardState();
-    var result = sm2(current, quality);
+    var result = schedule(current, quality);
     var now = new Date();
     var newState = {
       reps: result.reps,
@@ -1350,14 +1355,13 @@
     saveProgress(progress);
     if (currentUser) { upsertRemoteProgress(currentUser.id, deck.id, cardIdx, newState); }
 
-    if (quality < 3) {
+    if (quality === QUALITY_AGAIN) {
       state.tally.again++;
       // Requeue a few cards later in this same session rather than immediately next,
       // so it gets another attempt before the session ends but isn't just repeated.
       var insertAt = Math.min(state.queue.length, state.queuePos + 4);
       state.queue.splice(insertAt, 0, cardIdx);
-    } else if (quality === 3) { state.tally.hard++; }
-    else if (quality === 4) { state.tally.good++; }
+    } else if (quality === QUALITY_GOOD) { state.tally.good++; }
     else { state.tally.easy++; }
 
     if (state.queuePos + 1 < state.queue.length) {
@@ -1399,7 +1403,7 @@
     els.flipBtn.hidden = true;
     els.ratingRow.hidden = true;
 
-    var reviewed = state.tally.again + state.tally.hard + state.tally.good + state.tally.easy;
+    var reviewed = state.tally.again + state.tally.good + state.tally.easy;
     els.tallyTotal.textContent = reviewed;
     els.tallyAgain.textContent = state.tally.again;
     els.tallyGood.textContent = state.tally.good + state.tally.easy;
@@ -1421,10 +1425,9 @@
 
   els.flashcard.addEventListener('click', flip);
   els.flipBtn.addEventListener('click', flip);
-  els.againBtn.addEventListener('click', function(){ rate(1); });
-  els.hardBtn.addEventListener('click', function(){ rate(3); });
-  els.goodBtn.addEventListener('click', function(){ rate(4); });
-  els.easyBtn.addEventListener('click', function(){ rate(5); });
+  els.againBtn.addEventListener('click', function(){ rate(QUALITY_AGAIN); });
+  els.goodBtn.addEventListener('click', function(){ rate(QUALITY_GOOD); });
+  els.easyBtn.addEventListener('click', function(){ rate(QUALITY_EASY); });
 
   // Keyboard shortcuts, the way people expect a spaced-repetition tool to work:
   // space or enter flips, 1-4 rate. Ignored while a dialog or text field has focus.
@@ -1448,7 +1451,7 @@
       return;
     }
     if (!state.flipped) { return; }
-    var map = { '1': 1, '2': 3, '3': 4, '4': 5 };
+    var map = { '1': QUALITY_AGAIN, '2': QUALITY_GOOD, '3': QUALITY_EASY };
     if (Object.prototype.hasOwnProperty.call(map, e.key)) {
       e.preventDefault();
       rate(map[e.key]);
