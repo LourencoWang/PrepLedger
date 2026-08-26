@@ -146,6 +146,56 @@
   .track-btn:hover{color:var(--ink);}
   .track-btn[data-track="ib"].is-active{background:var(--blue);color:var(--contrast);border-bottom-color:var(--blue);}
   .track-btn[data-track="consulting"].is-active{background:var(--amber);color:var(--contrast);border-bottom-color:var(--amber);}
+  /* ---------- signed-in progress tracker ---------- */
+  .tracker{
+    margin-bottom:2rem;padding:1.35rem 1.5rem 1.5rem;
+    border:1px solid var(--line-soft);border-radius:16px;background:var(--surface);
+  }
+  .tracker-head{
+    display:flex;align-items:baseline;justify-content:space-between;gap:1rem;
+    flex-wrap:wrap;margin-bottom:1.15rem;
+  }
+  .tracker-title{
+    font-family:var(--display);font-weight:700;font-size:.9rem;letter-spacing:.06em;
+    text-transform:uppercase;color:var(--ink);margin:0;
+  }
+  .tracker-sub{
+    font-family:var(--body);font-size:.78rem;color:var(--ink-faint);
+    font-variant-numeric:tabular-nums;
+  }
+  .tracker-grid{
+    display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem;margin-bottom:1.1rem;
+  }
+  .tracker-stat{
+    display:flex;flex-direction:column;gap:.15rem;
+    padding:.7rem .85rem;border-radius:10px;background:var(--surface-strong);
+    border-left:2px solid var(--line-soft);
+  }
+  .tracker-stat.is-again{border-left-color:var(--red);}
+  .tracker-stat.is-good{border-left-color:var(--amber);}
+  .tracker-stat.is-easy{border-left-color:var(--green);}
+  .tracker-num{
+    font-family:var(--display);font-weight:800;font-size:1.45rem;line-height:1;
+    color:var(--ink);font-variant-numeric:tabular-nums;
+  }
+  .tracker-lbl{
+    font-family:var(--body);font-size:.68rem;font-weight:600;letter-spacing:.05em;
+    text-transform:uppercase;color:var(--ink-faint);
+  }
+  .tracker-bar{
+    display:flex;height:6px;border-radius:3px;overflow:hidden;background:var(--surface-strong);
+  }
+  .tracker-seg{display:block;height:100%;transition:width .3s ease;}
+  @media (prefers-reduced-motion: reduce){ .tracker-seg{transition:none;} }
+  .seg-again{background:var(--red);}
+  .seg-good{background:var(--amber);}
+  .seg-easy{background:var(--green);}
+  @media (max-width:600px){
+    .tracker{padding:1.15rem 1.15rem 1.3rem;}
+    .tracker-grid{gap:.5rem;}
+    .tracker-num{font-size:1.3rem;}
+  }
+
   .track-hint{
     color:var(--ink-faint);font-size:.9rem;padding:2.75rem 1rem;text-align:center;
     border:1px dashed var(--line-soft);border-radius:16px;
@@ -543,6 +593,31 @@
           <button type="button" class="track-btn" id="track-consulting-btn" data-track="consulting" aria-pressed="false">Consulting</button>
         </div>
       </div>
+      <section class="tracker" id="tracker" hidden aria-labelledby="tracker-title">
+        <div class="tracker-head">
+          <h3 class="tracker-title" id="tracker-title">Your progress</h3>
+          <span class="tracker-sub" id="tracker-sub"></span>
+        </div>
+        <div class="tracker-grid">
+          <div class="tracker-stat is-again">
+            <span class="tracker-num" id="stat-again">0</span>
+            <span class="tracker-lbl">Again</span>
+          </div>
+          <div class="tracker-stat is-good">
+            <span class="tracker-num" id="stat-good">0</span>
+            <span class="tracker-lbl">Good</span>
+          </div>
+          <div class="tracker-stat is-easy">
+            <span class="tracker-num" id="stat-easy">0</span>
+            <span class="tracker-lbl">Easy</span>
+          </div>
+        </div>
+        <div class="tracker-bar" id="tracker-bar" role="img" aria-label="Share of your studied cards at each stage">
+          <span class="tracker-seg seg-again" id="seg-again"></span>
+          <span class="tracker-seg seg-good" id="seg-good"></span>
+          <span class="tracker-seg seg-easy" id="seg-easy"></span>
+        </div>
+      </section>
       <p class="track-hint" id="track-hint">Pick a track above to see its decks.</p>
       <div class="deck-grid" id="deck-grid" hidden></div>
     </section>
@@ -742,6 +817,17 @@
     return new Date(cardState.due).getTime() <= nowMs;
   }
 
+  // Due dates land at the START of their day, not at the clock time you happened to
+  // answer. Otherwise a card answered at 9pm Monday with a 3-day interval isn't ready
+  // until 9pm Thursday, and someone sitting down on Thursday afternoon is told there
+  // is nothing to study. Whole days are what people actually mean by "in 3 days".
+  function dueDateAfter(days){
+    var d = new Date();
+    d.setDate(d.getDate() + days);
+    d.setHours(0, 0, 0, 0);
+    return d.toISOString();
+  }
+
   function deckStats(deck){
     var now = Date.now();
     var total = deck.cards.length;
@@ -779,7 +865,11 @@
   }
 
   function formatWhenDue(ms){
-    var days = Math.ceil((ms - Date.now()) / DAY_MS);
+    // Counted in whole calendar days, so a card due at the start of Thursday reads
+    // as "in 3 days" all through Monday rather than flipping to "in 4 days" at noon.
+    var due = new Date(ms); due.setHours(0, 0, 0, 0);
+    var today = new Date(); today.setHours(0, 0, 0, 0);
+    var days = Math.round((due.getTime() - today.getTime()) / DAY_MS);
     if (days <= 0) { return 'now'; }
     if (days === 1) { return 'tomorrow'; }
     if (days === 7) { return 'in a week'; }
@@ -899,6 +989,49 @@
     return Object.keys(progress[deck.id] || {}).length;
   }
 
+  // Totals across every deck, grouped by which box each card currently sits in.
+  // Derived from the schedule itself rather than a separate log, so it can never
+  // drift out of step with what the site will actually show you.
+  function overallStats(){
+    var now = Date.now();
+    var out = { started:0, again:0, good:0, easy:0, due:0, total:0 };
+    decks.forEach(function(deck){
+      out.total += deck.cards.length;
+      var dp = progress[deck.id] || {};
+      Object.keys(dp).forEach(function(k){
+        var cs = dp[k];
+        if (!cs || typeof cs.interval !== 'number') { return; }
+        out.started++;
+        if (isCardDue(cs, now)) { out.due++; }
+        if (cs.interval >= SCHEDULE[QUALITY_EASY]) { out.easy++; }
+        else if (cs.interval >= SCHEDULE[QUALITY_GOOD]) { out.good++; }
+        else { out.again++; }
+      });
+    });
+    return out;
+  }
+
+  function renderTracker(){
+    // Signed-out visitors still have local progress, but the tracker is framed as a
+    // reason to hold an account, so it's shown only when signed in.
+    if (!currentUser || !decks.length) { els.tracker.hidden = true; return; }
+    var s = overallStats();
+    els.tracker.hidden = false;
+    els.statAgain.textContent = s.again;
+    els.statGood.textContent = s.good;
+    els.statEasy.textContent = s.easy;
+    if (!s.started) {
+      els.trackerSub.textContent = 'No cards studied yet';
+    } else {
+      els.trackerSub.textContent = s.started + ' of ' + s.total + ' started' +
+        (s.due ? '  \u00b7  ' + s.due + ' ready now' : '  \u00b7  nothing due');
+    }
+    var denom = s.started || 1;
+    els.segAgain.style.width = (s.again / denom * 100) + '%';
+    els.segGood.style.width  = (s.good  / denom * 100) + '%';
+    els.segEasy.style.width  = (s.easy  / denom * 100) + '%';
+  }
+
   function resetDeckProgress(deck){
     delete progress[deck.id];
     saveProgress(progress);
@@ -923,6 +1056,14 @@
     trackIbBtn: document.getElementById('track-ib-btn'),
     trackConsultingBtn: document.getElementById('track-consulting-btn'),
     trackHint: document.getElementById('track-hint'),
+    tracker: document.getElementById('tracker'),
+    trackerSub: document.getElementById('tracker-sub'),
+    statAgain: document.getElementById('stat-again'),
+    statGood: document.getElementById('stat-good'),
+    statEasy: document.getElementById('stat-easy'),
+    segAgain: document.getElementById('seg-again'),
+    segGood: document.getElementById('seg-good'),
+    segEasy: document.getElementById('seg-easy'),
     mainView: document.getElementById('main-view'),
     study: document.getElementById('study'),
     backBtn: document.getElementById('back-btn'),
@@ -1030,6 +1171,9 @@
   function handleLogin(user){
     currentUser = user;
     updateAuthUI();
+    // Show the tracker straight away from local data. The remote load below may
+    // refine the numbers or fail outright; either way the panel is already there.
+    renderTracker();
     // A session can also arrive without the form being submitted (e.g. a restored
     // session on load), so make sure the modal isn't left sitting open.
     if (!els.authOverlay.hidden) { closeAuthModal(); }
@@ -1110,6 +1254,7 @@
 
   function renderCatalog(){
     els.deckGrid.innerHTML = '';
+    renderTracker();
 
     if (!state.track){
       els.deckGrid.hidden = true;
@@ -1347,7 +1492,7 @@
       reps: result.reps,
       ef: result.ef,
       interval: result.interval,
-      due: new Date(now.getTime() + result.interval * DAY_MS).toISOString(),
+      due: dueDateAfter(result.interval),
       last: now.toISOString()
     };
     progress[deck.id] = progress[deck.id] || {};
