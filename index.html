@@ -109,8 +109,29 @@
     margin-bottom:.65rem;
   }
   .section-sub{color:var(--ink-soft);font-size:.95rem;margin-bottom:1.9rem;max-width:56ch;}
+  .track-toggle-wrap{margin-bottom:2rem;}
+  .track-toggle{
+    display:flex;border:1px solid var(--line-soft);border-radius:14px;overflow:hidden;
+    max-width:560px;
+  }
+  .track-btn{
+    all:unset;box-sizing:border-box;cursor:pointer;flex:1;text-align:center;
+    padding:1.15rem 1rem;
+    font-family:var(--display);font-weight:800;font-size:.85rem;letter-spacing:.05em;text-transform:uppercase;
+    color:var(--ink-soft);background:transparent;border-bottom:2px solid transparent;
+    transition:background .18s ease, color .18s ease, border-color .18s ease;
+  }
+  .track-btn + .track-btn{border-left:1px solid var(--line-soft);}
+  .track-btn:hover{color:var(--ink);}
+  .track-btn.is-active{background:var(--surface-strong);color:var(--ink);}
+  .track-btn[data-track="ib"].is-active{border-bottom-color:var(--blue);}
+  .track-btn[data-track="consulting"].is-active{border-bottom-color:var(--amber);}
+  .track-hint{
+    color:var(--ink-faint);font-size:.9rem;padding:2.75rem 1rem;text-align:center;
+    border:1px dashed var(--line-soft);border-radius:16px;
+  }
   .deck-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:1rem;}
-  @media (max-width:600px){ .deck-grid{grid-template-columns:1fr;} }
+  @media (max-width:600px){ .deck-grid{grid-template-columns:1fr;} .track-toggle{max-width:100%;} }
   .deck-card{
     position:relative;overflow:hidden;
     display:flex;flex-direction:column;gap:1.15rem;
@@ -437,24 +458,31 @@
       <div class="hero-blob" aria-hidden="true"></div>
       <div class="hero-inner">
         <div class="hero-content">
-          <p class="hero-eyebrow">Field notes for business &amp; finance interviews</p>
+          <p class="hero-eyebrow">Field notes for investment banking &amp; consulting interviews</p>
           <h1 class="hero-title">Flip the card.<br>Know the numbers.</h1>
-          <p class="hero-sub">PrepLedger drills the SQL, financial-statement, valuation, and Excel fundamentals that come up in business and finance interviews and technical screens, one card, one concept, at a time.</p>
+          <p class="hero-sub">PrepLedger drills the financial-statement, valuation, Excel-modeling, and case-interview fundamentals that come up in investment banking and consulting interviews, one card, one concept, at a time.</p>
           <div class="hero-actions">
             <a href="#catalog" class="btn-primary">Open the catalog &#8599;</a>
           </div>
         </div>
         <div class="hero-caption-row">
           <span>Portfolio project &middot; 2026</span>
-          <span>12 decks &middot; 108 cards</span>
+          <span>6 IB decks &middot; 7 consulting decks</span>
         </div>
       </div>
     </section>
 
     <section class="catalog" id="catalog">
       <h2 class="section-title">The catalog</h2>
-      <p class="section-sub">Every card is written from scratch: no scraped questions, no affiliation with any course or employer. Pick a deck to start.</p>
-      <div class="deck-grid" id="deck-grid"></div>
+      <p class="section-sub">Every card is written from scratch: no scraped questions, no affiliation with any course or employer. Pick your track to see decks built for it.</p>
+      <div class="track-toggle-wrap">
+        <div class="track-toggle" role="group" aria-label="Choose your interview track">
+          <button type="button" class="track-btn" id="track-ib-btn" data-track="ib" aria-pressed="false">Investment Banking</button>
+          <button type="button" class="track-btn" id="track-consulting-btn" data-track="consulting" aria-pressed="false">Consulting</button>
+        </div>
+      </div>
+      <p class="track-hint" id="track-hint">Pick a track above to see its decks.</p>
+      <div class="deck-grid" id="deck-grid" hidden></div>
     </section>
   </main>
 
@@ -516,13 +544,6 @@
 
   <footer class="site-footer">
     <p class="footer-disclaimer">PrepLedger is an independent portfolio project. All flashcard content is originally written and is not affiliated with, endorsed by, or sourced from any university, employer, or prep platform.</p>
-    <p class="footer-credit">
-      <span>Built by Lourenço Wang</span>
-      <span class="sep">&middot;</span>
-      <a href="mailto:wanglourenco@gmail.com">Email</a>
-      <span class="sep">&middot;</span>
-      <a href="https://www.linkedin.com/in/louren%C3%A7o-wang-764155388/" target="_blank" rel="noopener">LinkedIn</a>
-    </p>
     <button class="footer-reset" id="reset-progress-btn">Reset study progress</button>
   </footer>
 
@@ -560,7 +581,7 @@
   var currentUser = null;
   var decks = []; // populated at runtime from decks.json, see init() below
 
-  var state = {deckIndex:0, cardIndex:0, flipped:false, mastered:0, review:0};
+  var state = {deckIndex:0, cardIndex:0, flipped:false, mastered:0, review:0, track:null};
 
   var PROGRESS_KEY = 'flashprep_progress_v1';
 
@@ -636,18 +657,30 @@
     return Object.keys(progress[deck.id] || {}).length;
   }
 
-  function resetDeckProgress(deck, i){
+  function resetDeckProgress(deck){
     delete progress[deck.id];
     saveProgress(progress);
     if (currentUser) { deleteRemoteDeckProgress(currentUser.id, deck.id); }
     renderCatalog();
-    var card = els.deckGrid.children[i];
+    var card = els.deckGrid.querySelector('[data-deck-id="' + deck.id + '"]');
     var focusTarget = card ? (card.querySelector('.deck-restart-mini') || card.querySelector('.deck-open')) : null;
     if (focusTarget) focusTarget.focus();
   }
 
+  function setTrack(track){
+    state.track = track;
+    els.trackIbBtn.classList.toggle('is-active', track === 'ib');
+    els.trackConsultingBtn.classList.toggle('is-active', track === 'consulting');
+    els.trackIbBtn.setAttribute('aria-pressed', String(track === 'ib'));
+    els.trackConsultingBtn.setAttribute('aria-pressed', String(track === 'consulting'));
+    renderCatalog();
+  }
+
   var els = {
     deckGrid: document.getElementById('deck-grid'),
+    trackIbBtn: document.getElementById('track-ib-btn'),
+    trackConsultingBtn: document.getElementById('track-consulting-btn'),
+    trackHint: document.getElementById('track-hint'),
     mainView: document.getElementById('main-view'),
     study: document.getElementById('study'),
     backBtn: document.getElementById('back-btn'),
@@ -826,7 +859,19 @@
 
   function renderCatalog(){
     els.deckGrid.innerHTML = '';
-    decks.forEach(function(deck, i){
+
+    if (!state.track){
+      els.deckGrid.hidden = true;
+      els.trackHint.hidden = false;
+      return;
+    }
+    els.deckGrid.hidden = false;
+    els.trackHint.hidden = true;
+
+    var visibleDecks = decks.filter(function(d){ return d.track === state.track; });
+
+    visibleDecks.forEach(function(deck){
+      var i = decks.indexOf(deck);
       var total = deck.cards.length;
       var mastered = deckMasteredCount(deck);
       var studied = deckStudiedCount(deck);
@@ -838,6 +883,7 @@
 
       var card = document.createElement('div');
       card.className = 'deck-card';
+      card.dataset.deckId = deck.id;
 
       var open = document.createElement('button');
       open.className = 'deck-open';
@@ -872,7 +918,7 @@
         restartBtn.className = 'deck-restart-mini';
         restartBtn.type = 'button';
         restartBtn.textContent = 'Restart deck';
-        restartBtn.addEventListener('click', function(){ resetDeckProgress(deck, i); });
+        restartBtn.addEventListener('click', function(){ resetDeckProgress(deck); });
         row.appendChild(restartBtn);
       }
 
@@ -914,12 +960,12 @@
   }
 
   function backToCatalog(){
-    var openedIndex = state.deckIndex;
+    var openedDeck = decks[state.deckIndex];
     els.study.hidden = true;
     els.introSection.hidden = true;
     els.mainView.hidden = false;
     renderCatalog();
-    var openedCard = els.deckGrid.children[openedIndex];
+    var openedCard = openedDeck ? els.deckGrid.querySelector('[data-deck-id="' + openedDeck.id + '"]') : null;
     var openedBtn = openedCard ? openedCard.querySelector('.deck-open') : null;
     if (openedBtn) openedBtn.focus();
   }
@@ -1040,6 +1086,8 @@
     openDeck(state.deckIndex);
   });
   els.resetBtn.addEventListener('click', resetProgress);
+  els.trackIbBtn.addEventListener('click', function(){ setTrack('ib'); });
+  els.trackConsultingBtn.addEventListener('click', function(){ setTrack('consulting'); });
 
   function init(){
     els.deckGrid.innerHTML = '<p style="color:var(--ink-soft);padding:.5rem 0;">Loading catalog&hellip;</p>';
