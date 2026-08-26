@@ -35,6 +35,7 @@
     --blue:#4C7CF0;
     --amber:#E2952E;
     --green:#4FAE7A;
+    --red:#E0574B;
     --contrast:#08080A;
     --shadow:rgba(0,0,0,0.55);
     --focus:#82A4FF;
@@ -330,19 +331,46 @@
   }
   .flip-btn:hover{border-color:var(--ink);color:var(--ink);}
 
-  .rating-row{display:flex;gap:.9rem;flex-wrap:wrap;justify-content:center;}
+  .rating-row{display:flex;gap:.6rem;flex-wrap:wrap;justify-content:center;}
   .stamp{
-    all:unset;cursor:pointer;
-    font-family:var(--display);font-weight:700;font-size:.8rem;letter-spacing:.05em;text-transform:uppercase;
-    padding:.75rem 1.4rem;border-radius:999px;border:1.5px solid;
+    all:unset;box-sizing:border-box;cursor:pointer;
+    display:flex;flex-direction:column;align-items:center;gap:.15rem;
+    min-width:5.2rem;text-align:center;
+    font-family:var(--display);font-weight:700;font-size:.78rem;letter-spacing:.05em;text-transform:uppercase;
+    padding:.6rem 1rem;border-radius:12px;border:1.5px solid;
     transition:background .15s ease, color .15s ease, transform .12s ease;
   }
   .stamp:active{transform:scale(.96);}
   @media (prefers-reduced-motion: reduce){ .stamp{transition:none;} .stamp:active{transform:none;} }
-  .stamp-mastered{color:var(--blue);border-color:var(--blue);}
-  .stamp-mastered:hover{background:var(--blue);color:#fff;}
-  .stamp-review{color:var(--amber);border-color:var(--amber);}
-  .stamp-review:hover{background:var(--amber);color:var(--contrast);}
+  .stamp-interval{
+    font-family:var(--body);font-size:.64rem;font-weight:600;letter-spacing:.02em;
+    text-transform:none;opacity:.72;font-variant-numeric:tabular-nums;
+  }
+  .stamp-key{
+    display:block;font-family:var(--body);font-size:.58rem;font-weight:600;
+    letter-spacing:.06em;opacity:.5;text-transform:none;margin-top:.1rem;
+  }
+  .stamp-again{color:var(--red);border-color:var(--red);}
+  .stamp-again:hover{background:var(--red);color:var(--contrast);}
+  .stamp-hard{color:var(--amber);border-color:var(--amber);}
+  .stamp-hard:hover{background:var(--amber);color:var(--contrast);}
+  .stamp-good{color:var(--blue);border-color:var(--blue);}
+  .stamp-good:hover{background:var(--blue);color:var(--contrast);}
+  .stamp-easy{color:var(--green);border-color:var(--green);}
+  .stamp-easy:hover{background:var(--green);color:var(--contrast);}
+  @media (max-width:600px){
+    .rating-row{gap:.45rem;width:100%;}
+    .stamp{flex:1 1 0;min-width:0;padding:.55rem .35rem;font-size:.72rem;}
+    .stamp-key{display:none;}
+  }
+  .due-pill{
+    display:inline-flex;align-items:center;gap:.3rem;
+    font-family:var(--body);font-size:.68rem;font-weight:700;letter-spacing:.05em;
+    text-transform:uppercase;padding:.2rem .5rem;border-radius:999px;
+    background:var(--surface-strong);color:var(--ink-soft);
+  }
+  .due-pill.has-due{background:rgba(76,124,240,.16);color:var(--blue);}
+  .due-pill.all-clear{background:rgba(79,174,122,.14);color:var(--green);}
 
   .study-complete{text-align:center;max-width:420px;padding:1rem 0;}
   .study-complete h3:focus{outline:none;}
@@ -355,6 +383,10 @@
     display:flex;gap:1.5rem;justify-content:center;margin-bottom:1.75rem;flex-wrap:wrap;
   }
   .complete-tally b{color:var(--ink);font-weight:700;font-variant-numeric:tabular-nums;}
+  .complete-next{
+    font-family:var(--body);font-size:.88rem;color:var(--ink-soft);
+    margin:-.85rem 0 1.6rem;line-height:1.55;
+  }
   .complete-actions{display:flex;gap:.85rem;justify-content:center;flex-wrap:wrap;}
   .btn-ghost{
     all:unset;cursor:pointer;
@@ -549,17 +581,29 @@
       </div>
 
       <div class="rating-row" id="rating-row" hidden>
-        <button class="stamp stamp-review" id="review-btn">Review again</button>
-        <button class="stamp stamp-mastered" id="mastered-btn">Mastered</button>
+        <button class="stamp stamp-again" id="again-btn" type="button">
+          <span>Again</span><span class="stamp-interval" id="again-interval"></span><span class="stamp-key">1</span>
+        </button>
+        <button class="stamp stamp-hard" id="hard-btn" type="button">
+          <span>Hard</span><span class="stamp-interval" id="hard-interval"></span><span class="stamp-key">2</span>
+        </button>
+        <button class="stamp stamp-good" id="good-btn" type="button">
+          <span>Good</span><span class="stamp-interval" id="good-interval"></span><span class="stamp-key">3</span>
+        </button>
+        <button class="stamp stamp-easy" id="easy-btn" type="button">
+          <span>Easy</span><span class="stamp-interval" id="easy-interval"></span><span class="stamp-key">4</span>
+        </button>
       </div>
       <button class="flip-btn" id="flip-btn">Flip card</button>
 
       <div class="study-complete" id="study-complete" hidden>
         <h3 id="complete-heading" tabindex="-1">Deck complete.</h3>
         <div class="complete-tally">
-          <span>Mastered: <b id="tally-mastered">0</b></span>
-          <span>To review: <b id="tally-review">0</b></span>
+          <span>Reviewed: <b id="tally-total">0</b></span>
+          <span>Again: <b id="tally-again">0</b></span>
+          <span>Good or better: <b id="tally-good">0</b></span>
         </div>
+        <p class="complete-next" id="complete-next"></p>
         <div class="complete-actions">
           <button class="btn-ghost" id="restart-btn">Restart deck</button>
           <button class="btn-solid" id="catalog-btn">Back to catalog</button>
@@ -607,7 +651,11 @@
   var currentUser = null;
   var decks = []; // populated at runtime from decks.json, see init() below
 
-  var state = {deckIndex:0, cardIndex:0, flipped:false, mastered:0, review:0, track:null};
+  var state = {
+    deckIndex:0, cardIndex:0, flipped:false, track:null,
+    queue:[], queuePos:0,
+    tally:{again:0, hard:0, good:0, easy:0}
+  };
 
   // --- private, owner-only visit counter ---
   // Logs one row per page load into a "visits" table (see setup SQL kept alongside this
@@ -637,12 +685,141 @@
       .catch(function(err){ console.error('logVisit:', err); });
   }
 
-  var PROGRESS_KEY = 'flashprep_progress_v1';
+  // v2: card progress is spaced-repetition state (SM-2), not a mastered/review flag.
+  // Bumping the storage key means any old v1 data is left behind rather than misread
+  // as the new shape.
+  var PROGRESS_KEY = 'flashprep_progress_v2';
+
+  var DAY_MS = 24 * 60 * 60 * 1000;
+  // A card counts as "mature" once it has held up for 3+ weeks, the usual
+  // spaced-repetition convention for "this is genuinely learned".
+  var MATURE_DAYS = 21;
+
+  // --- SM-2 spaced repetition ---
+  // quality: we use 1=Again, 3=Hard, 4=Good, 5=Easy. Standard SuperMemo SM-2, with
+  // one deliberate deviation: an "easy bonus" multiplier. In textbook SM-2 the next
+  // interval is interval*EF regardless of whether you pressed Good or Easy, so both
+  // buttons would preview the identical number of days and Easy would look broken.
+  // Every practical implementation (Anki included) applies a bonus; 1.3 is the
+  // conventional value.
+  var EASY_BONUS = 1.3;
+
+  function sm2(card, quality){
+    var reps = card.reps, ef = card.ef, interval = card.interval;
+    if (quality < 3) {
+      reps = 0;
+      interval = 1;
+    } else {
+      if (reps === 0) { interval = quality === 5 ? 4 : 1; }
+      else if (reps === 1) { interval = quality === 5 ? Math.round(6 * EASY_BONUS) : 6; }
+      else {
+        interval = Math.round(interval * ef * (quality === 5 ? EASY_BONUS : 1));
+      }
+      reps += 1;
+    }
+    ef = ef + (0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02));
+    if (ef < 1.3) { ef = 1.3; }
+    // Guard against a rounding collapse on very short intervals.
+    if (interval < 1) { interval = 1; }
+    return { reps: reps, ef: ef, interval: interval };
+  }
+
+  function newCardState(){
+    return { reps: 0, ef: 2.5, interval: 0, due: new Date().toISOString(), last: null };
+  }
+
+  function getCardState(deckId, cardIndex){
+    return (progress[deckId] && progress[deckId][cardIndex]) || null;
+  }
+
+  function isCardDue(cardState, nowMs){
+    if (!cardState) { return true; } // never studied = due now
+    return new Date(cardState.due).getTime() <= nowMs;
+  }
+
+  function deckStats(deck){
+    var now = Date.now();
+    var total = deck.cards.length;
+    // "due" = previously studied and ready for review. "brandNew" = never seen.
+    // Both are studiable now, but they're counted separately so "3 due" doesn't
+    // misleadingly include cards you've simply never opened.
+    var due = 0, brandNew = 0, mature = 0, started = 0, nextDueMs = null;
+    for (var i = 0; i < total; i++){
+      var cs = getCardState(deck.id, i);
+      if (!cs) {
+        brandNew++;
+      } else if (isCardDue(cs, now)) {
+        due++;
+      } else {
+        var dueMs = new Date(cs.due).getTime();
+        if (nextDueMs === null || dueMs < nextDueMs) { nextDueMs = dueMs; }
+      }
+      if (cs) {
+        started++;
+        if (cs.interval >= MATURE_DAYS) { mature++; }
+      }
+    }
+    return { total: total, due: due, brandNew: brandNew, mature: mature,
+             started: started, nextDueMs: nextDueMs };
+  }
+
+  function formatInterval(days){
+    if (days <= 0) { return 'today'; }
+    if (days === 1) { return '1 day'; }
+    if (days < 21) { return Math.round(days) + ' days'; }
+    if (days < 365) { return Math.round(days / 30) + ' mo'; }
+    return (Math.round(days / 36.5) / 10) + ' yr';
+  }
+
+  function formatWhenDue(ms){
+    var days = Math.ceil((ms - Date.now()) / DAY_MS);
+    if (days <= 0) { return 'now'; }
+    if (days === 1) { return 'tomorrow'; }
+    if (days < 30) { return 'in ' + days + ' days'; }
+    if (days < 365) { return 'in ' + Math.round(days / 30) + ' months'; }
+    return 'in ' + (Math.round(days / 36.5) / 10) + ' years';
+  }
+
+  // Anyone who studied before the v2 change has binary mastered/review flags with no
+  // scheduling data. Rather than silently discard that, convert it once: a "mastered"
+  // card starts as if answered Good twice, a "review" card as if answered once. Both
+  // come due immediately, so the schedule rebuilds from the user's next real answer.
+  function migrateV1(){
+    try{
+      var oldRaw = localStorage.getItem('flashprep_progress_v1');
+      if (!oldRaw) { return null; }
+      var old = JSON.parse(oldRaw);
+      var now = new Date().toISOString();
+      var out = {};
+      Object.keys(old).forEach(function(deckId){
+        out[deckId] = {};
+        Object.keys(old[deckId]).forEach(function(idx){
+          var wasMastered = old[deckId][idx] === 'mastered';
+          out[deckId][idx] = {
+            reps: wasMastered ? 2 : 1,
+            ef: 2.5,
+            interval: wasMastered ? 6 : 1,
+            due: now,
+            last: null
+          };
+        });
+      });
+      return out;
+    }catch(e){
+      return null;
+    }
+  }
 
   function loadProgress(){
     try{
       var raw = localStorage.getItem(PROGRESS_KEY);
-      return raw ? JSON.parse(raw) : {};
+      if (raw) { return JSON.parse(raw); }
+      var migrated = migrateV1();
+      if (migrated) {
+        localStorage.setItem(PROGRESS_KEY, JSON.stringify(migrated));
+        return migrated;
+      }
+      return {};
     }catch(e){
       return {};
     }
@@ -661,23 +838,35 @@
   // --- remote (Supabase) progress sync, active only while signed in ---
   function loadRemoteProgress(userId){
     if (!sb) return Promise.resolve(null);
-    return sb.from('progress').select('deck_id, card_index, status').eq('user_id', userId)
+    return sb.from('progress')
+      .select('deck_id, card_index, reps, ef, interval_days, due_at, last_reviewed_at')
+      .eq('user_id', userId)
       .then(function(res){
         if (res.error) { console.error('loadRemoteProgress:', res.error); return null; }
         var p = {};
         res.data.forEach(function(row){
+          // Skip rows written by the old v1 schema, which have no scheduling data.
+          if (row.due_at === null || row.due_at === undefined) { return; }
           p[row.deck_id] = p[row.deck_id] || {};
-          p[row.deck_id][row.card_index] = row.status;
+          p[row.deck_id][row.card_index] = {
+            reps: row.reps || 0,
+            ef: row.ef || 2.5,
+            interval: row.interval_days || 0,
+            due: row.due_at,
+            last: row.last_reviewed_at || null
+          };
         });
         return p;
       })
       .catch(function(err){ console.error('loadRemoteProgress:', err); return null; });
   }
 
-  function upsertRemoteProgress(userId, deckId, cardIndex, status){
+  function upsertRemoteProgress(userId, deckId, cardIndex, cardState){
     if (!sb) return Promise.resolve();
     return sb.from('progress').upsert({
-      user_id: userId, deck_id: deckId, card_index: cardIndex, status: status,
+      user_id: userId, deck_id: deckId, card_index: cardIndex,
+      reps: cardState.reps, ef: cardState.ef, interval_days: cardState.interval,
+      due_at: cardState.due, last_reviewed_at: cardState.last,
       updated_at: new Date().toISOString()
     }, { onConflict: 'user_id,deck_id,card_index' })
       .then(function(res){ if (res.error) console.error('upsertRemoteProgress:', res.error); })
@@ -696,15 +885,6 @@
     return sb.from('progress').delete().eq('user_id', userId)
       .then(function(res){ if (res.error) console.error('deleteAllRemoteProgress:', res.error); })
       .catch(function(err){ console.error('deleteAllRemoteProgress:', err); });
-  }
-
-  function deckMasteredCount(deck){
-    var deckProgress = progress[deck.id] || {};
-    var count = 0;
-    Object.keys(deckProgress).forEach(function(k){
-      if(deckProgress[k] === 'mastered'){ count++; }
-    });
-    return count;
   }
 
   function deckStudiedCount(deck){
@@ -747,12 +927,20 @@
     front: document.getElementById('card-front-text'),
     back: document.getElementById('card-back-text'),
     ratingRow: document.getElementById('rating-row'),
-    reviewBtn: document.getElementById('review-btn'),
-    masteredBtn: document.getElementById('mastered-btn'),
+    againBtn: document.getElementById('again-btn'),
+    hardBtn: document.getElementById('hard-btn'),
+    goodBtn: document.getElementById('good-btn'),
+    easyBtn: document.getElementById('easy-btn'),
+    againInterval: document.getElementById('again-interval'),
+    hardInterval: document.getElementById('hard-interval'),
+    goodInterval: document.getElementById('good-interval'),
+    easyInterval: document.getElementById('easy-interval'),
+    completeNext: document.getElementById('complete-next'),
     flipBtn: document.getElementById('flip-btn'),
     complete: document.getElementById('study-complete'),
-    tallyMastered: document.getElementById('tally-mastered'),
-    tallyReview: document.getElementById('tally-review'),
+    tallyTotal: document.getElementById('tally-total'),
+    tallyAgain: document.getElementById('tally-again'),
+    tallyGood: document.getElementById('tally-good'),
     restartBtn: document.getElementById('restart-btn'),
     completeHeading: document.getElementById('complete-heading'),
     catalogBtn: document.getElementById('catalog-btn'),
@@ -929,14 +1117,26 @@
 
     visibleDecks.forEach(function(deck){
       var i = decks.indexOf(deck);
-      var total = deck.cards.length;
-      var mastered = deckMasteredCount(deck);
-      var studied = deckStudiedCount(deck);
-      var pct = total ? Math.round((mastered / total) * 100) : 0;
-      var complete = total > 0 && mastered === total;
-      var label = complete
-        ? 'Completed'
-        : (mastered > 0 ? mastered + ' / ' + total + ' mastered' : total + ' cards');
+      var st = deckStats(deck);
+      var total = st.total;
+      var studied = st.started;
+      // The bar tracks how much of the deck is genuinely learned (mature), not how
+      // much has been clicked through once.
+      var pct = total ? Math.round((st.mature / total) * 100) : 0;
+      var studiable = st.due + st.brandNew;
+      var complete = total > 0 && studiable === 0;
+
+      var label;
+      if (studied === 0) {
+        label = total + ' cards';
+      } else if (studiable > 0) {
+        var bits = [];
+        if (st.due > 0) { bits.push(st.due + ' due'); }
+        if (st.brandNew > 0) { bits.push(st.brandNew + ' new'); }
+        label = bits.join(' · ');
+      } else {
+        label = st.nextDueMs ? 'Next review ' + formatWhenDue(st.nextDueMs) : 'All caught up';
+      }
 
       var card = document.createElement('div');
       card.className = 'deck-card';
@@ -970,6 +1170,13 @@
       labelEl.textContent = label;
       row.appendChild(labelEl);
 
+      if (studied > 0 && st.mature > 0){
+        var matureEl = document.createElement('span');
+        matureEl.className = 'deck-progress-label';
+        matureEl.textContent = st.mature + ' learned';
+        row.appendChild(matureEl);
+      }
+
       if(studied > 0){
         var restartBtn = document.createElement('button');
         restartBtn.className = 'deck-restart-mini';
@@ -992,7 +1199,21 @@
     els.introTag.textContent = deck.tag;
     els.introTitle.textContent = deck.name;
     els.introText.textContent = deck.intro;
-    els.introCardCount.textContent = deck.cards.length + ' cards in this deck';
+    var ist = deckStats(deck);
+    var studiable = ist.due + ist.brandNew;
+    if (ist.started === 0) {
+      els.introCardCount.textContent = ist.total + ' cards in this deck';
+    } else if (studiable > 0) {
+      els.introCardCount.textContent =
+        studiable + ' of ' + ist.total + ' ready to study' +
+        (ist.due > 0 ? ' (' + ist.due + ' due for review)' : '');
+    } else {
+      els.introCardCount.textContent = ist.nextDueMs
+        ? 'Caught up. Next review ' + formatWhenDue(ist.nextDueMs)
+        : 'Caught up on this deck';
+    }
+    els.introStartBtn.textContent = studiable > 0 || ist.started === 0
+      ? 'Start studying ↗' : 'Review anyway ↗';
     els.mainView.hidden = true;
     els.study.hidden = true;
     els.introSection.hidden = false;
@@ -1000,11 +1221,29 @@
     els.introBackBtn.focus();
   }
 
-  function openDeck(i){
+  // A session is the cards that are actually due, in deck order, with never-seen
+  // cards after the reviews. Cards scheduled for the future are skipped entirely,
+  // which is the whole point of spaced repetition.
+  // includeAll ignores the schedule and queues the whole deck. Used when a deck is
+  // caught up but the user wants to run through it anyway, e.g. the night before an
+  // interview. Ratings still apply normally, so an early review just reschedules.
+  function buildSession(deck, includeAll){
+    var now = Date.now();
+    var reviews = [], fresh = [];
+    for (var i = 0; i < deck.cards.length; i++){
+      var cs = getCardState(deck.id, i);
+      if (!cs) { fresh.push(i); }
+      else if (includeAll || isCardDue(cs, now)) { reviews.push(i); }
+    }
+    return reviews.concat(fresh);
+  }
+
+  function openDeck(i, includeAll){
     state.deckIndex = i;
-    state.cardIndex = 0;
-    state.mastered = 0;
-    state.review = 0;
+    state.queue = buildSession(decks[i], includeAll);
+    state.queuePos = 0;
+    state.cardIndex = state.queue.length ? state.queue[0] : 0;
+    state.tally = {again:0, hard:0, good:0, easy:0};
     els.introSection.hidden = true;
     els.mainView.hidden = true;
     els.study.hidden = false;
@@ -1012,7 +1251,10 @@
     els.cardStage.hidden = false;
     els.flipBtn.hidden = false;
     window.scrollTo({top:0, behavior:'auto'});
-    renderCard();
+    // Nothing due means nothing to study; go straight to the summary rather than
+    // showing a card the scheduler deliberately deferred.
+    if (!state.queue.length) { showComplete(); }
+    else { renderCard(); }
     els.backBtn.focus();
   }
 
@@ -1052,13 +1294,24 @@
     els.back.innerHTML = html;
   }
 
+  // Shows what each button would schedule, so the choice is informed rather than blind.
+  function updateIntervalPreviews(){
+    var deck = currentDeck();
+    var current = getCardState(deck.id, state.cardIndex) || newCardState();
+    els.hardInterval.textContent = formatInterval(sm2(current, 3).interval);
+    els.goodInterval.textContent = formatInterval(sm2(current, 4).interval);
+    els.easyInterval.textContent = formatInterval(sm2(current, 5).interval);
+    els.againInterval.textContent = 'today';
+  }
+
   function renderCard(){
     var deck = currentDeck();
+    state.cardIndex = state.queue[state.queuePos];
     var card = deck.cards[state.cardIndex];
     els.deckName.textContent = deck.name;
-    els.progressText.textContent = 'Card ' + (state.cardIndex + 1) + ' of ' + deck.cards.length;
-    var masteredNow = deckMasteredCount(deck);
-    els.progressFill.style.width = (deck.cards.length ? (masteredNow / deck.cards.length * 100) : 0) + '%';
+    els.progressText.textContent = (state.queuePos + 1) + ' of ' + state.queue.length + ' due';
+    els.progressFill.style.width =
+      (state.queue.length ? (state.queuePos / state.queue.length * 100) : 0) + '%';
     els.front.textContent = card.q;
     renderBackFace(card);
     els.flashcard.classList.toggle('has-diagram', !!card.image);
@@ -1066,6 +1319,8 @@
     els.inner.classList.remove('flipped');
     els.flashcard.setAttribute('aria-pressed', 'false');
     els.ratingRow.hidden = true;
+    els.flipBtn.textContent = 'Flip card';
+    updateIntervalPreviews();
   }
 
   function flip(){
@@ -1076,15 +1331,37 @@
     els.flipBtn.textContent = state.flipped ? 'Flip back' : 'Flip card';
   }
 
-  function rate(type){
-    if(type === 'mastered'){ state.mastered++; } else { state.review++; }
+  function rate(quality){
+    if (!state.flipped) { return; } // can't rate a card you haven't looked at
     var deck = currentDeck();
+    var cardIdx = state.cardIndex;
+    var current = getCardState(deck.id, cardIdx) || newCardState();
+    var result = sm2(current, quality);
+    var now = new Date();
+    var newState = {
+      reps: result.reps,
+      ef: result.ef,
+      interval: result.interval,
+      due: new Date(now.getTime() + result.interval * DAY_MS).toISOString(),
+      last: now.toISOString()
+    };
     progress[deck.id] = progress[deck.id] || {};
-    progress[deck.id][state.cardIndex] = type;
+    progress[deck.id][cardIdx] = newState;
     saveProgress(progress);
-    if (currentUser) { upsertRemoteProgress(currentUser.id, deck.id, state.cardIndex, type); }
-    if(state.cardIndex + 1 < deck.cards.length){
-      state.cardIndex++;
+    if (currentUser) { upsertRemoteProgress(currentUser.id, deck.id, cardIdx, newState); }
+
+    if (quality < 3) {
+      state.tally.again++;
+      // Requeue a few cards later in this same session rather than immediately next,
+      // so it gets another attempt before the session ends but isn't just repeated.
+      var insertAt = Math.min(state.queue.length, state.queuePos + 4);
+      state.queue.splice(insertAt, 0, cardIdx);
+    } else if (quality === 3) { state.tally.hard++; }
+    else if (quality === 4) { state.tally.good++; }
+    else { state.tally.easy++; }
+
+    if (state.queuePos + 1 < state.queue.length) {
+      state.queuePos++;
       renderCard();
     } else {
       showComplete();
@@ -1115,26 +1392,77 @@
 
   function showComplete(){
     var deck = currentDeck();
-    var masteredNow = deckMasteredCount(deck);
-    els.progressFill.style.width = (deck.cards.length ? (masteredNow / deck.cards.length * 100) : 0) + '%';
-    els.progressText.textContent = 'Complete';
+    var st = deckStats(deck);
+    els.progressFill.style.width = '100%';
+    els.progressText.textContent = 'Session complete';
     els.cardStage.hidden = true;
     els.flipBtn.hidden = true;
     els.ratingRow.hidden = true;
-    els.tallyMastered.textContent = state.mastered;
-    els.tallyReview.textContent = state.review;
+
+    var reviewed = state.tally.again + state.tally.hard + state.tally.good + state.tally.easy;
+    els.tallyTotal.textContent = reviewed;
+    els.tallyAgain.textContent = state.tally.again;
+    els.tallyGood.textContent = state.tally.good + state.tally.easy;
+
+    if (reviewed === 0) {
+      els.completeHeading.textContent = 'Nothing due right now.';
+      els.completeNext.textContent = st.nextDueMs
+        ? 'You are caught up on this deck. The next card is scheduled ' + formatWhenDue(st.nextDueMs) + '.'
+        : 'You are caught up on this deck.';
+    } else {
+      els.completeHeading.textContent = 'Session complete.';
+      els.completeNext.textContent = st.nextDueMs
+        ? 'Next review ' + formatWhenDue(st.nextDueMs) + '. Cards you found hard will come back sooner.'
+        : 'Cards you found hard will come back sooner than the ones you knew.';
+    }
     els.complete.hidden = false;
     els.completeHeading.focus();
   }
 
   els.flashcard.addEventListener('click', flip);
   els.flipBtn.addEventListener('click', flip);
-  els.reviewBtn.addEventListener('click', function(){ rate('review'); });
-  els.masteredBtn.addEventListener('click', function(){ rate('mastered'); });
+  els.againBtn.addEventListener('click', function(){ rate(1); });
+  els.hardBtn.addEventListener('click', function(){ rate(3); });
+  els.goodBtn.addEventListener('click', function(){ rate(4); });
+  els.easyBtn.addEventListener('click', function(){ rate(5); });
+
+  // Keyboard shortcuts, the way people expect a spaced-repetition tool to work:
+  // space or enter flips, 1-4 rate. Ignored while a dialog or text field has focus.
+  document.addEventListener('keydown', function(e){
+    if (els.study.hidden || !els.authOverlay.hidden) { return; }
+    if (e.metaKey || e.ctrlKey || e.altKey) { return; }
+    var tag = (e.target && e.target.tagName) || '';
+    if (tag === 'INPUT' || tag === 'TEXTAREA') { return; }
+    if (!els.complete.hidden) { return; }
+
+    if (e.key === ' ' || e.key === 'Enter') {
+      // If focus is on a control that already responds to Space/Enter (the card
+      // itself, the flip button, a rating button), let the browser activate it
+      // rather than handling the key twice. Anywhere else, Space flips.
+      var t = e.target;
+      var onOwnControl = t === els.flashcard || t === els.flipBtn ||
+        (t && t.closest && t.closest('.rating-row'));
+      if (onOwnControl) { return; }
+      e.preventDefault();
+      flip();
+      return;
+    }
+    if (!state.flipped) { return; }
+    var map = { '1': 1, '2': 3, '3': 4, '4': 5 };
+    if (Object.prototype.hasOwnProperty.call(map, e.key)) {
+      e.preventDefault();
+      rate(map[e.key]);
+    }
+  });
   els.backBtn.addEventListener('click', backToCatalog);
   els.catalogBtn.addEventListener('click', backToCatalog);
   els.introBackBtn.addEventListener('click', backToCatalog);
-  els.introStartBtn.addEventListener('click', function(){ openDeck(state.deckIndex); });
+  els.introStartBtn.addEventListener('click', function(){
+    // If the deck is caught up, the button reads "Review anyway" and should honour that.
+    var st = deckStats(decks[state.deckIndex]);
+    var caughtUp = st.started > 0 && (st.due + st.brandNew) === 0;
+    openDeck(state.deckIndex, caughtUp);
+  });
   els.restartBtn.addEventListener('click', function(){
     var deck = currentDeck();
     delete progress[deck.id];
