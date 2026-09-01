@@ -116,7 +116,7 @@ FONTS = ('<link rel="preconnect" href="https://fonts.googleapis.com">\n'
          'family=Archivo:wght@400;500;600;700;800&display=swap">')
 
 
-def head(title, desc, canonical):
+def head(title, desc, canonical, deck_id=None):
     return f"""<!doctype html>
 <html lang="en">
 <head>
@@ -143,17 +143,18 @@ def head(title, desc, canonical):
 <div class="page">
   <header class="site-header">
     <a class="wordmark" href="{SITE}/"><b>View</b><span>Prep</span></a>
-    <a class="header-cta" href="{SITE}/">Study these cards</a>
+    <a class="header-cta" href="{SITE}/{('?deck=' + deck_id) if deck_id else ''}">Study these cards</a>
   </header>
 """
 
 
-FOOTER = f"""
+def footer(deck_id=None):
+    return f"""
   <footer class="site-footer">
     <p>ViewPrep is an independent portfolio project. All flashcard content is originally
     written and is not affiliated with, endorsed by, or sourced from any university,
     employer, or prep platform.</p>
-    <p><a href="{SITE}/">Study these cards interactively</a> &middot;
+    <p><a href="{SITE}/{('?deck=' + deck_id) if deck_id else ''}">Study these cards interactively</a> &middot;
        <a href="{SITE}/decks/">All decks</a></p>
   </footer>
 </div>
@@ -168,7 +169,7 @@ def deck_page(deck, all_decks):
     desc = f"{deck['description']} {len(cards)} free flashcards with answers, written for people with no finance background."
     canonical = f"{SITE}/{OUT_DIR}/{deck['id']}.html"
 
-    out = [head(title, desc, canonical)]
+    out = [head(title, desc, canonical, deck["id"])]
     out.append(f'  <p class="crumb"><a href="{SITE}/">ViewPrep</a> / '
                f'<a href="{SITE}/{OUT_DIR}/">Decks</a> / {esc(TRACK_NAME[deck["track"]])}</p>')
     out.append(f"  <h1>{esc(deck['name'])}</h1>")
@@ -222,7 +223,7 @@ def deck_page(deck, all_decks):
     }
     out.append('  <script type="application/ld+json">'
                + json.dumps(faq, ensure_ascii=False) + '</script>')
-    out.append(FOOTER)
+    out.append(footer(deck["id"]))
     return "\n".join(out)
 
 
@@ -262,7 +263,7 @@ def hub_page(decks):
                'just before you would have forgotten them.</p>')
     out.append(f'    <a class="btn" href="{SITE}/">Start studying</a>')
     out.append('  </div>')
-    out.append(FOOTER)
+    out.append(footer())
     return "\n".join(out)
 
 
