@@ -546,6 +546,11 @@
     text-decoration-color:var(--line-soft);text-underline-offset:2px;
   }
   .footer-browse a:hover{color:var(--blue);text-decoration-color:var(--blue);}
+  .footer-links{
+    margin-top:.85rem;font-family:var(--body);font-size:.82rem;color:var(--ink-faint);
+  }
+  .footer-links a{color:var(--ink-soft);text-decoration:none;}
+  .footer-links a:hover{color:var(--blue);text-decoration:underline;}
 
   .footer-reset{
     all:unset;cursor:pointer;
@@ -782,6 +787,11 @@
   <footer class="site-footer">
     <p class="footer-disclaimer">ViewPrep is an independent portfolio project. All flashcard content is originally written and is not affiliated with, endorsed by, or sourced from any university, employer, or prep platform.</p>
     <p class="footer-browse"><a href="/decks/">Browse every deck and read all 400 cards &#8594;</a></p>
+    <p class="footer-links">
+      <a href="/faq.html">FAQ</a> &middot;
+      <a href="/privacy.html">Privacy</a> &middot;
+      <a href="/terms.html">Terms</a>
+    </p>
     <button class="footer-reset" id="reset-progress-btn">Reset study progress</button>
   </footer>
 
