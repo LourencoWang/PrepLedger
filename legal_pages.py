@@ -17,7 +17,7 @@ Every factual claim in the privacy page was checked against index.html:
 import json
 
 LAST_UPDATED = "1 September 2026"
-CONTACT = "hello@viewprep.net"
+CONTACT = "support@viewprep.net"
 
 
 def _p(text):
