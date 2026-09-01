@@ -241,33 +241,18 @@
   }
   .deck-card:nth-child(even)::before{background:var(--amber);}
   .deck-card:hover,.deck-card:focus-within{transform:translateY(-2px);border-color:var(--line);}
-  /* --- hero demo card --- */
-  .hero-demo{margin-top:1.5rem;margin-bottom:1.6rem;display:flex;flex-direction:column;align-items:flex-start;gap:.8rem;}
-  .hero-card{
-    width:100%;max-width:30rem;min-height:12.5rem;
-    display:flex;flex-direction:column;align-items:flex-start;gap:.85rem;
-    padding:1.5rem 1.4rem;border-radius:1.1rem;cursor:pointer;text-align:left;
-    background:var(--card,#fff);border:1px solid rgba(0,0,0,.10);
-    box-shadow:0 18px 40px rgba(0,0,0,.13);
-    transition:transform .16s ease, box-shadow .16s ease;font:inherit;
-    /* The hero is dark, this card is not: set the colour rather than inherit it. */
-    color:#151A24;
+  /* --- hero demo card ---
+     Uses .flashcard / .flashcard-inner / .face wholesale, so it is the same
+     component as the study view: same 3D flip, same fonts, same surface. Only
+     the wrapper and the size cap below are new. */
+  .hero-demo{margin:1.6rem 0 1.7rem;max-width:30rem;}
+  .hero-demo .flashcard{min-height:270px;aspect-ratio:5/3.2;}
+  @media (max-width:600px){ .hero-demo .flashcard{min-height:300px;} }
+  .hero-demo-link{
+    display:inline-block;margin-top:1rem;font-family:var(--body);font-size:.92rem;
+    font-weight:600;text-decoration:none;color:var(--amber);
   }
-  .hero-card:hover{transform:translateY(-2px);box-shadow:0 24px 52px rgba(0,0,0,.17);}
-  .hero-card:focus-visible{outline:2px solid var(--accent,#b8860b);outline-offset:3px;}
-    .hero-card-tag{
-    font-size:.66rem;letter-spacing:.16em;text-transform:uppercase;font-weight:700;
-    color:#A9791A;
-  }
-  .hero-card-text{font-size:1.12rem;line-height:1.4;font-weight:600;flex:1 1 auto;}
-  .hero-card.is-back .hero-card-text{font-weight:500;}
-  .hero-card-hint{font-size:.78rem;color:#6B7280;}
-  .hero-demo-link{font-size:.9rem;font-weight:600;text-decoration:none;color:#E7BC55;}
   .hero-demo-link:hover{text-decoration:underline;}
-  @media (max-width:600px){
-    .hero-card{min-height:11rem;padding:1.25rem 1.15rem;}
-    .hero-card-text{font-size:1.02rem;}
-  }
 
   .deck-open{
     all:unset;cursor:pointer;display:flex;flex-direction:column;gap:1rem;width:100%;
@@ -649,13 +634,23 @@
         <!-- A real card from the deck, picked at random on each load. The page used
              to describe the product; this shows it. -->
         <div class="hero-demo" id="hero-demo" hidden>
-          <button class="hero-card" id="hero-card" type="button" aria-live="polite">
-            <span class="hero-card-tag" id="hero-card-tag"></span>
-            <span class="hero-card-text" id="hero-card-text"></span>
-            <span class="hero-card-hint" id="hero-card-hint">Tap to flip</span>
-          </button>
+          <div class="card-stage">
+            <button class="flashcard" id="hero-flashcard" aria-pressed="false">
+              <div class="flashcard-inner" id="hero-flashcard-inner">
+                <div class="face face-front">
+                  <span class="face-label" id="hero-face-label">Question</span>
+                  <p class="face-text" id="hero-front-text"></p>
+                  <span class="tap-hint">Tap to flip</span>
+                </div>
+                <div class="face face-back">
+                  <span class="face-label">Answer</span>
+                  <div class="face-text" id="hero-back-text"></div>
+                </div>
+              </div>
+            </button>
+          </div>
           <a class="hero-demo-link" id="hero-demo-link" href="#catalog">
-            See the full answer and 399 more &#8594;
+            See this deck and 399 more cards &#8594;
           </a>
         </div>
         <div class="hero-actions">
@@ -1215,10 +1210,11 @@
     trackerPromptText: document.getElementById('tracker-prompt-text'),
     trackerPromptBtn: document.getElementById('tracker-prompt-btn'),
     heroDemo: document.getElementById('hero-demo'),
-    heroCard: document.getElementById('hero-card'),
-    heroCardTag: document.getElementById('hero-card-tag'),
-    heroCardText: document.getElementById('hero-card-text'),
-    heroCardHint: document.getElementById('hero-card-hint'),
+    heroFlashcard: document.getElementById('hero-flashcard'),
+    heroInner: document.getElementById('hero-flashcard-inner'),
+    heroFaceLabel: document.getElementById('hero-face-label'),
+    heroFrontText: document.getElementById('hero-front-text'),
+    heroBackText: document.getElementById('hero-back-text'),
     heroDemoLink: document.getElementById('hero-demo-link'),
     savePrompt: document.getElementById('save-prompt'),
     savePromptText: document.getElementById('save-prompt-text'),
@@ -1895,12 +1891,14 @@
 
   // --- Hero demo card ---
   //
-  // Which card? Not a hand-picked favourite, which goes stale and reflects my taste
-  // rather than the deck. A pool chosen by rules the hero actually imposes: no
-  // diagram (no room), a question and takeaway short enough to read at a glance, and
-  // no fictional-company setup that needs context the visitor hasn't got. One is
-  // drawn at random per load, so a repeat visitor sees a different card and the
-  // homepage stops being a static brochure.
+  // Which card? Not a hand-picked favourite: a pool chosen by the constraints the
+  // hero actually imposes. No diagram (the hero card is shorter than a study card),
+  // a question and takeaway short enough to read at a glance, and no fictional-company
+  // setup that needs context a first-time visitor has not got. One is drawn at random
+  // per load, so a repeat visitor sees a different card.
+  //
+  // It renders through the same .flashcard markup and CSS as the study view, so the
+  // flip, the type and the surface are identical rather than a lookalike.
   var HERO_MAX_Q = 110, HERO_MAX_A = 110;
   var HERO_FICTIONAL = /\b(Ferrow|Corvale|Dunmoor|Aldmere|Velmara|Bramwell|Calder|Northbay|Vantor|Kestrel|Marrow|Alder|Brightwater)\b/i;
   var heroPick = null, heroFlipped = false;
@@ -1909,8 +1907,7 @@
     var out = [];
     decks.forEach(function(deck){
       deck.cards.forEach(function(card, i){
-        if (card.image) { return; }
-        if (!card.takeaway) { return; }
+        if (card.image || !card.takeaway) { return; }
         if (card.q.length > HERO_MAX_Q || card.takeaway.length > HERO_MAX_A) { return; }
         if (HERO_FICTIONAL.test(card.q) || HERO_FICTIONAL.test(card.takeaway)) { return; }
         out.push({ deck: deck, index: i, card: card });
@@ -1919,29 +1916,26 @@
     return out;
   }
 
-  function renderHeroCard(){
-    if (!heroPick) { return; }
-    var c = heroPick.card;
-    els.heroCard.classList.toggle('is-back', heroFlipped);
-    els.heroCardTag.textContent = heroFlipped ? 'Answer' : heroPick.deck.name;
-    els.heroCardText.textContent = heroFlipped ? c.takeaway : c.q;
-    els.heroCardHint.textContent = heroFlipped ? 'Tap to flip back' : 'Tap to flip';
-  }
-
   function initHeroCard(){
+    if (!els.heroFlashcard) { return; }
     var pool = heroEligible();
     if (!pool.length) { return; }
     heroPick = pool[Math.floor(Math.random() * pool.length)];
     heroFlipped = false;
-    renderHeroCard();
+    els.heroInner.classList.remove('flipped');
+    els.heroFlashcard.setAttribute('aria-pressed', 'false');
+    els.heroFaceLabel.textContent = heroPick.deck.name;
+    els.heroFrontText.textContent = heroPick.card.q;
+    els.heroBackText.textContent = heroPick.card.takeaway;
     els.heroDemoLink.href = '?deck=' + encodeURIComponent(heroPick.deck.id);
     els.heroDemo.hidden = false;
   }
 
-  if (els.heroCard) {
-    els.heroCard.addEventListener('click', function(){
+  if (els.heroFlashcard) {
+    els.heroFlashcard.addEventListener('click', function(){
       heroFlipped = !heroFlipped;
-      renderHeroCard();
+      els.heroInner.classList.toggle('flipped', heroFlipped);
+      els.heroFlashcard.setAttribute('aria-pressed', String(heroFlipped));
       if (heroFlipped) { trackOnce('hero_flip', { deck: heroPick.deck.id }); }
     });
   }
