@@ -818,6 +818,42 @@
       .catch(function(err){ console.error('logVisit:', err); });
   }
 
+  // --- Funnel events ---
+  //
+  // "Visitors but no signups" is unanswerable without knowing where people stop.
+  // These record the handful of steps between landing and creating an account:
+  //
+  //   catalog_view -> deck_open -> first_review -> session_end
+  //                                     -> prompt_shown -> prompt_click -> auth_success
+  //
+  // Deliberately coarse. One row per deck opened and one per session, not one per
+  // card, so a heavy user doesn't write fifty rows and the table stays readable.
+  // Tracking is fire-and-forget: a failure here must never interrupt studying, so
+  // errors are swallowed rather than surfaced.
+  var trackedOnce = {};
+
+  function track(name, props){
+    try{
+      if (!sb) return;
+      var visitorId = getVisitorId();
+      if (!visitorId) return; // storage unavailable, same opt-out as logVisit
+      var row = {
+        visitor_id: visitorId,
+        name: name,
+        props: props || {}
+      };
+      if (currentUser) { row.user_id = currentUser.id; }
+      sb.from('events').insert(row).then(function(){}, function(){});
+    }catch(e){ /* never let analytics break the page */ }
+  }
+
+  // For events that should fire at most once per visit.
+  function trackOnce(name, props){
+    if (trackedOnce[name]) return;
+    trackedOnce[name] = true;
+    track(name, props);
+  }
+
   // v2: card progress is spaced-repetition state (SM-2), not a mastered/review flag.
   // Bumping the storage key means any old v1 data is left behind rather than misread
   // as the new shape.
@@ -1088,6 +1124,7 @@
         ' cards</b> so far, saved in this browser only. A free account keeps them if you close the tab or switch device.';
       pendingSavePrompt = false;
       savePromptSeenThisVisit = true;
+      trackOnce('prompt_shown', { where: 'tracker', studied: s.started });
     }
     els.trackerPrompt.hidden = !showPrompt;
     els.trackerNote.hidden = !!currentUser || showPrompt;
@@ -1293,8 +1330,14 @@
   // Explicit wrapper: the raw listener would pass the click Event through as `mode`.
   els.accountBtn.addEventListener('click', function(){ openAuthModal('signin'); });
   els.trackerSaveBtn.addEventListener('click', function(){ openAuthModal('signup'); });
-  els.trackerPromptBtn.addEventListener('click', function(){ openAuthModal('signup'); });
-  els.savePromptBtn.addEventListener('click', function(){ openAuthModal('signup'); });
+  els.trackerPromptBtn.addEventListener('click', function(){
+    track('prompt_click', { where: 'tracker' });
+    openAuthModal('signup');
+  });
+  els.savePromptBtn.addEventListener('click', function(){
+    track('prompt_click', { where: 'complete' });
+    openAuthModal('signup');
+  });
   els.authCloseBtn.addEventListener('click', closeAuthModal);
   els.authOverlay.addEventListener('click', function(e){ if (e.target === els.authOverlay) { closeAuthModal(); } });
   els.authToggleBtn.addEventListener('click', function(){
@@ -1319,6 +1362,7 @@
       : sb.auth.signUp({ email: email, password: password });
     authCall.then(function(result){
       if (result.error) { throw result.error; }
+      track('auth_success', { mode: authMode });
       if (authMode === 'signup' && result.data && result.data.user && !result.data.session) {
         authMode = 'signin';
         updateAuthModalMode();
@@ -1327,6 +1371,7 @@
       }
       closeAuthModal();
     }).catch(function(err){
+      track('auth_error', { mode: authMode, message: (err && err.message) ? String(err.message).slice(0, 120) : 'unknown' });
       els.authError.textContent = (err && err.message) ? err.message : 'Something went wrong. Please try again.';
       els.authError.hidden = false;
     }).finally(function(){
@@ -1482,6 +1527,13 @@
     state.deckIndex = i;
     state.queue = buildSession(decks[i], includeAll);
     state.queuePos = 0;
+    sessionEnded = false;
+    track('deck_open', {
+      deck: decks[i].id,
+      track: decks[i].track,
+      due: state.queue.length,
+      all: !!includeAll
+    });
     state.cardIndex = state.queue.length ? state.queue[0] : 0;
     state.tally = {again:0, good:0, easy:0};
     els.introSection.hidden = true;
@@ -1504,6 +1556,25 @@
   var SAVE_PROMPT_MIN_CARDS = 5;
   var pendingSavePrompt = false;
   var savePromptSeenThisVisit = false;
+  // A session ends either by finishing the queue or by walking away from it. Both
+  // are worth recording, but only once, so the two paths share this flag.
+  var sessionEnded = false;
+
+  function endSession(how){
+    if (sessionEnded) return;
+    sessionEnded = true;
+    var deck = decks[state.deckIndex];
+    var reviewed = state.tally.again + state.tally.good + state.tally.easy;
+    track('session_end', {
+      how: how,
+      deck: deck ? deck.id : null,
+      reviewed: reviewed,
+      again: state.tally.again,
+      good: state.tally.good,
+      easy: state.tally.easy,
+      signed_in: !!currentUser
+    });
+  }
 
   function backToCatalog(){
     var openedDeck = decks[state.deckIndex];
@@ -1513,6 +1584,7 @@
     if (!currentUser && !savePromptSeenThisVisit && reviewed >= SAVE_PROMPT_MIN_CARDS) {
       pendingSavePrompt = true;
     }
+    endSession('left');
     els.study.hidden = true;
     els.introSection.hidden = true;
     els.mainView.hidden = false;
@@ -1601,6 +1673,9 @@
     progress[deck.id][cardIdx] = newState;
     saveProgress(progress);
     if (currentUser) { upsertRemoteProgress(currentUser.id, deck.id, cardIdx, newState); }
+    // The single most important step in the funnel: did they actually study
+    // anything, or just look at the catalog and leave?
+    trackOnce('first_review', { deck: deck.id, track: deck.track });
 
     if (quality === QUALITY_AGAIN) {
       state.tally.again++;
@@ -1644,6 +1719,7 @@
   function showComplete(){
     var deck = currentDeck();
     var st = deckStats(deck);
+    endSession('finished');
     els.progressFill.style.width = '100%';
     els.progressText.textContent = 'Session complete';
     els.cardStage.hidden = true;
@@ -1661,6 +1737,7 @@
     // signup before it has been useful.
     if (!currentUser && reviewed >= SAVE_PROMPT_MIN_CARDS) {
       savePromptSeenThisVisit = true;
+      trackOnce('prompt_shown', { where: 'complete', reviewed: reviewed });
       els.savePromptText.innerHTML = 'You&rsquo;ve reviewed <b>' + reviewed +
         ' cards</b>. Right now that&rsquo;s saved in this browser only. A free account keeps it if you close the tab or switch device.';
       els.savePrompt.hidden = false;
@@ -1747,6 +1824,7 @@
       .then(function(data){
         decks = data;
         setTrack('ib');
+        track('catalog_view', { decks: decks.length });
       })
       .catch(function(err){
         els.deckGrid.innerHTML = '<p style="color:var(--ink-soft);padding:.5rem 0;">Couldn&rsquo;t load the deck catalog right now. Please refresh the page, or try again in a moment.</p>';
