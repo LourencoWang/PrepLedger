@@ -193,7 +193,7 @@ def deck_page(deck, all_decks):
     out.append('  <div class="cta-band">')
     out.append('    <p>Reading is not the same as remembering. Study this deck with '
                'scheduled review so the cards come back before you forget them.</p>')
-    out.append(f'    <a class="btn" href="{SITE}/">Study {esc(deck["name"])}</a>')
+    out.append(f'    <a class="btn" href="{SITE}/?deck={deck["id"]}">Study {esc(deck["name"])}</a>')
     out.append('  </div>')
 
     # Sibling decks in the same track give crawlers a path between pages.
