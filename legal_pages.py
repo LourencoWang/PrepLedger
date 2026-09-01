@@ -39,7 +39,7 @@ def privacy_body():
     o.append("  <h1>Privacy policy</h1>")
     o.append(f'  <p class="meta-line">Last updated {LAST_UPDATED}</p>')
 
-    o.append(_p("ViewPrep is a free flashcard site run by one person, Louren&ccedil;o Wang. "
+    o.append(_p("ViewPrep is a free flashcard site run by a single independent operator. "
                 "This page describes exactly what the site stores, where it goes, and how to "
                 "get rid of it. It describes the site as actually built, not a generic template."))
 
@@ -177,8 +177,8 @@ def terms_body():
                 "all actively encouraged."))
 
     o.append(_h("Who owns what"))
-    o.append(_p("All flashcard content, text and design on ViewPrep was written and built by "
-                "Louren&ccedil;o Wang and remains his. You get a personal, non-transferable right "
+    o.append(_p("All flashcard content, text and design on ViewPrep is owned by "
+                "the site's author and remains theirs. You get a personal, non-transferable right "
                 "to use it to study. That right does not include redistribution."))
 
     o.append(_h("Availability"))
@@ -208,10 +208,6 @@ FAQ = [
      "No. You can study every card signed out, and your progress is saved in your browser. An "
      "account only adds two things: your progress survives clearing your browser data, and it "
      "follows you between your phone and your laptop."),
-    ("Who writes the cards?",
-     "They were written from scratch by Louren&ccedil;o Wang, a management student at Warwick "
-     "Business School, and reviewed for accuracy before publishing. They are not scraped from "
-     "any course, forum or prep provider."),
     ("Do I need a finance background to use it?",
      "No, and that is the point. Every deck is sequenced from the most basic concept to the more "
      "demanding ones, so you can start at accounting fundamentals knowing nothing and work "
@@ -285,6 +281,27 @@ def faq_jsonld():
     }
 
 
+# --------------------------------------------------------------------------- 404
+def notfound_body():
+    o = []
+    o.append('  <p class="crumb"><a href="/">ViewPrep</a> / Not found</p>')
+    o.append("  <h1>That page does not exist</h1>")
+    o.append(_p("The link was probably mistyped, or it pointed at something that has since "
+                "moved. Nothing is broken; this address just has nothing behind it."))
+    o.append(_h("Try one of these instead"))
+    o.append(_ul([
+        '<a href="/">Start studying</a> &ndash; 400 free cards, no account needed',
+        '<a href="/decks/">Every deck</a> &ndash; browse all 23 and read the cards as text',
+        '<a href="/faq.html">FAQ</a> &ndash; what this is and how the review scheduling works',
+    ]))
+    o.append('  <div class="cta-block">')
+    o.append("    <h2>Or just pick a card</h2>")
+    o.append(_p("Investment banking and consulting interview fundamentals, one card at a time."))
+    o.append('    <a class="btn" href="/">Study the cards</a>')
+    o.append("  </div>")
+    return "\n".join(o)
+
+
 PAGES = [
     # slug, title, description, body fn, jsonld fn or None, sitemap priority
     ("faq.html", "Frequently asked questions | ViewPrep",
@@ -293,6 +310,9 @@ PAGES = [
     ("privacy.html", "Privacy policy | ViewPrep",
      "What ViewPrep stores, where it goes, which third parties see anything, and how to have "
      "your data deleted.", privacy_body, None, "0.3"),
+    ("404.html", "Page not found | ViewPrep",
+     "That page does not exist. Browse the decks or start studying 400 free investment "
+     "banking and consulting interview flashcards.", notfound_body, None, None),
     ("terms.html", "Terms of use | ViewPrep",
      "Terms of use for ViewPrep, including the educational content disclaimer and acceptable "
      "use.", terms_body, None, "0.3"),

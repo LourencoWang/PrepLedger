@@ -134,6 +134,9 @@ def head(title, desc, canonical, deck_id=None):
 <meta name="description" content="{esc(desc)}">
 <link rel="canonical" href="{canonical}">
 <meta name="theme-color" content="#050505">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/appletouchicon.png">
 <meta property="og:type" content="article">
 <meta property="og:site_name" content="ViewPrep">
 <meta property="og:url" content="{canonical}">
@@ -159,9 +162,8 @@ def head(title, desc, canonical, deck_id=None):
 def footer(deck_id=None):
     return f"""
   <footer class="site-footer">
-    <p>ViewPrep is an independent portfolio project. All flashcard content is originally
-    written and is not affiliated with, endorsed by, or sourced from any university,
-    employer, or prep platform.</p>
+    <p>ViewPrep is an independent study resource. It is not affiliated with, endorsed
+    by, or sourced from any university, employer, or prep platform.</p>
     <p><a href="{SITE}/{('?deck=' + deck_id) if deck_id else ''}">Study these cards interactively</a> &middot;
        <a href="{SITE}/decks/">All decks</a> &middot;
        <a href="{SITE}/faq.html">FAQ</a> &middot;
@@ -297,7 +299,9 @@ def sitemap(decks):
     today = datetime.date.today().isoformat()
     urls = [(f"{SITE}/", "1.0"), (f"{SITE}/{OUT_DIR}/", "0.9")]
     urls += [(f"{SITE}/{OUT_DIR}/{d['id']}.html", "0.8") for d in decks]
-    urls += [(f"{SITE}/{slug}", pri) for slug, _t, _d, _b, _j, pri in legal_pages.PAGES]
+    # A 404 page carries priority None so it is generated but kept out of the sitemap.
+    urls += [(f"{SITE}/{slug}", pri)
+             for slug, _t, _d, _b, _j, pri in legal_pages.PAGES if pri]
     body = "\n".join(
         f"  <url>\n    <loc>{u}</loc>\n    <lastmod>{today}</lastmod>\n"
         f"    <priority>{p}</priority>\n  </url>" for u, p in urls)
