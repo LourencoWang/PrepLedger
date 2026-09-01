@@ -1814,6 +1814,39 @@
   els.trackIbBtn.addEventListener('click', function(){ setTrack('ib'); });
   els.trackConsultingBtn.addEventListener('click', function(){ setTrack('consulting'); });
 
+  // Deep link. viewprep.net/?deck=marketsizing opens that deck straight away, so a
+  // link from a social post or from one of the static deck pages lands on the cards
+  // the person came for instead of the homepage, which they then have to scroll and
+  // click through twice. ?track=consulting is the looser version of the same idea.
+  // An unknown deck id falls through to the normal catalog rather than erroring.
+  function openFromQuery(){
+    var params;
+    try { params = new URLSearchParams(window.location.search); }
+    catch(e){ return false; }
+
+    var wanted = params.get('deck');
+    if (!wanted) {
+      var t = params.get('track');
+      if (t === 'ib' || t === 'consulting') {
+        setTrack(t);
+        track('deep_link', { track: t });
+        return true;
+      }
+      return false;
+    }
+
+    var idx = -1;
+    for (var i = 0; i < decks.length; i++) {
+      if (decks[i].id === wanted) { idx = i; break; }
+    }
+    if (idx === -1) { return false; }
+
+    setTrack(decks[idx].track);
+    track('deep_link', { deck: decks[idx].id, track: decks[idx].track });
+    openDeck(idx);
+    return true;
+  }
+
   function init(){
     els.deckGrid.innerHTML = '<p style="color:var(--ink-soft);padding:.5rem 0;">Loading catalog&hellip;</p>';
     fetch('decks.json')
@@ -1825,6 +1858,7 @@
         decks = data;
         setTrack('ib');
         track('catalog_view', { decks: decks.length });
+        openFromQuery();
       })
       .catch(function(err){
         els.deckGrid.innerHTML = '<p style="color:var(--ink-soft);padding:.5rem 0;">Couldn&rsquo;t load the deck catalog right now. Please refresh the page, or try again in a moment.</p>';
