@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Privacy policy | ViewPrep</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="What ViewPrep stores, where it goes, which third parties see anything, and how to have your data deleted.">
+<link rel="canonical" href="https://viewprep.net/privacy.html">
+<meta name="theme-color" content="#050505">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="ViewPrep">
+<meta property="og:url" content="https://viewprep.net/privacy.html">
+<meta property="og:title" content="Privacy policy | ViewPrep">
+<meta property="og:description" content="What ViewPrep stores, where it goes, which third parties see anything, and how to have your data deleted.">
+<meta property="og:image" content="https://viewprep.net/ogimage.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Privacy policy | ViewPrep">
+<meta name="twitter:description" content="What ViewPrep stores, where it goes, which third parties see anything, and how to have your data deleted.">
+<meta name="twitter:image" content="https://viewprep.net/ogimage.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&display=swap">
+<style>
+  :root{
+    --bg:#050505; --ink:#F4F3EF; --ink-soft:#9C9B95; --ink-faint:#6E6D67;
+    --line:rgba(255,255,255,0.18); --line-soft:rgba(255,255,255,0.09);
+    --surface:rgba(255,255,255,0.035); --surface-strong:rgba(255,255,255,0.07);
+    --blue:#4C7CF0; --amber:#E2952E; --green:#4FAE7A; --red:#E0574B;
+    --contrast:#08080A;
+    --display:'Archivo',-apple-system,'Segoe UI',sans-serif;
+    --body:'Archivo',-apple-system,'Segoe UI',sans-serif;
+  }
+  *,*::before,*::after{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);
+       line-height:1.6;-webkit-font-smoothing:antialiased;}
+  a{color:inherit;}
+  .page{max-width:820px;margin:0 auto;padding:0 1.5rem 5rem;}
+  .site-header{display:flex;justify-content:space-between;align-items:center;gap:1rem;
+    padding:1.75rem 0;border-bottom:1px solid var(--line-soft);}
+  .wordmark{font-family:var(--display);font-size:1.05rem;letter-spacing:.03em;
+    text-decoration:none;}
+  .wordmark b{font-weight:800;color:var(--ink);}
+  .wordmark span{font-weight:400;color:var(--ink-faint);}
+  .header-cta{font-family:var(--body);font-size:.72rem;font-weight:700;letter-spacing:.06em;
+    text-transform:uppercase;color:var(--ink-soft);text-decoration:none;
+    border:1px solid var(--line-soft);border-radius:999px;padding:.5rem 1rem;}
+  .header-cta:hover{border-color:var(--blue);color:var(--ink);}
+  .crumb{font-family:var(--body);font-size:.72rem;font-weight:600;letter-spacing:.07em;
+    text-transform:uppercase;color:var(--ink-faint);margin:2rem 0 .9rem;}
+  .crumb a{color:var(--ink-faint);text-decoration:none;}
+  .crumb a:hover{color:var(--blue);}
+  h1{font-family:var(--display);font-weight:700;text-transform:uppercase;
+    font-size:clamp(1.9rem,5vw,2.9rem);line-height:1.03;letter-spacing:-.01em;
+    margin:0 0 1rem;text-wrap:balance;}
+  .lede{color:var(--ink-soft);font-size:1rem;line-height:1.65;max-width:60ch;margin:0 0 1.5rem;}
+  .meta-row{display:flex;flex-wrap:wrap;gap:.5rem 1.5rem;padding:1rem 0;
+    border-top:1px solid var(--line-soft);border-bottom:1px solid var(--line-soft);
+    font-size:.72rem;font-weight:600;letter-spacing:.07em;text-transform:uppercase;
+    color:var(--ink-faint);font-variant-numeric:tabular-nums;margin-bottom:2.25rem;}
+  .btn{display:inline-flex;align-items:center;gap:.5rem;padding:.85rem 1.6rem;
+    border-radius:999px;background:var(--ink);color:var(--contrast);text-decoration:none;
+    font-family:var(--display);font-size:.8rem;font-weight:700;letter-spacing:.06em;
+    text-transform:uppercase;}
+  .btn:hover{background:#fff;}
+  .card{border:1px solid var(--line-soft);border-radius:16px;background:var(--surface);
+    padding:1.5rem 1.6rem;margin-bottom:1rem;}
+  .card-n{font-family:var(--body);font-size:.66rem;font-weight:700;letter-spacing:.1em;
+    text-transform:uppercase;color:var(--blue);margin-bottom:.7rem;}
+  .card h2{font-family:var(--display);font-weight:600;font-size:1.12rem;line-height:1.42;
+    letter-spacing:-.005em;margin:0 0 1rem;color:var(--ink);}
+  .takeaway{font-family:var(--display);font-weight:700;font-size:1rem;line-height:1.45;
+    color:var(--ink);margin:0 0 .7rem;}
+  .answer{font-size:.95rem;line-height:1.65;color:var(--ink-soft);margin:0;}
+  .diagram{margin:0 0 1.1rem;}
+  .diagram svg{display:block;width:100%;height:auto;}
+  .deck-list{display:grid;grid-template-columns:repeat(2,1fr);gap:1rem;margin-bottom:2.5rem;}
+  .deck-item{border:1px solid var(--line-soft);border-radius:16px;background:var(--surface);
+    padding:1.3rem 1.4rem;text-decoration:none;display:flex;flex-direction:column;gap:.5rem;}
+  .deck-item:hover{border-color:var(--blue);}
+  .deck-tag{font-size:.66rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--blue);}
+  .deck-name{font-family:var(--display);font-weight:700;font-size:1rem;
+    text-transform:uppercase;letter-spacing:.01em;color:var(--ink);}
+  .deck-desc{font-size:.88rem;color:var(--ink-soft);line-height:1.5;}
+  .deck-count{font-size:.7rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;
+    color:var(--ink-faint);margin-top:auto;padding-top:.3rem;}
+  h2.track{font-family:var(--display);font-weight:700;font-size:1.15rem;
+    text-transform:uppercase;letter-spacing:.04em;margin:2.5rem 0 1.2rem;}
+  .cta-band{border:1px solid var(--line-soft);border-radius:16px;background:var(--surface);
+    padding:1.6rem;margin:2.5rem 0;text-align:center;}
+  .cta-band p{margin:0 0 1.1rem;color:var(--ink-soft);font-size:.95rem;}
+  .meta-line{color:var(--ink-faint);font-size:.9rem;margin:-.4rem 0 2rem;}
+  .prose h2{font-size:1.15rem;margin:2.2rem 0 .7rem;letter-spacing:-.01em;}
+  .prose p{margin:0 0 1rem;line-height:1.75;}
+  .prose ul{margin:0 0 1.2rem;padding-left:1.15rem;}
+  .prose li{margin:0 0 .55rem;line-height:1.7;}
+  .prose a{color:var(--blue);}
+  .cta-block{margin-top:3rem;padding-top:2rem;border-top:1px solid var(--line-soft);}
+  .site-footer{border-top:1px solid var(--line-soft);padding:1.5rem 0 0;margin-top:3rem;
+    color:var(--ink-faint);font-size:.82rem;line-height:1.6;}
+  .site-footer a{color:var(--ink-soft);}
+  @media (max-width:600px){
+    .page{padding:0 1.15rem 3rem;}
+    .deck-list{grid-template-columns:1fr;}
+    .card{padding:1.2rem 1.2rem;}
+  }
+</style>
+</head>
+<body>
+<div class="page">
+  <header class="site-header">
+    <a class="wordmark" href="https://viewprep.net/"><b>View</b><span>Prep</span></a>
+    <a class="header-cta" href="https://viewprep.net/">Study these cards</a>
+  </header>
+
+  <div class="prose">
+  <p class="crumb"><a href="/">ViewPrep</a> / Privacy</p>
+  <h1>Privacy policy</h1>
+  <p class="meta-line">Last updated 1 September 2026</p>
+  <p>ViewPrep is a free flashcard site run by one person, Louren&ccedil;o Wang. This page describes exactly what the site stores, where it goes, and how to get rid of it. It describes the site as actually built, not a generic template.</p>
+  <h2>The short version</h2>
+  <p>You can use the entire site without an account and without giving us anything identifying. If you create an account, we store your email address so you can sign back in, and your study progress so it follows you between devices. We do not run ads, we do not sell data, and there are no advertising or social media trackers on the site.</p>
+  <h2>What is stored in your browser</h2>
+  <p>Two items are kept in your browser's local storage. They stay on your device and are not cookies:</p>
+  <ul>
+    <li><b>flashprep_visitor_id_v1</b> &ndash; a random identifier generated in your browser. It is not linked to your name or email unless you create an account, and it lets us count how many separate people use the site rather than how many page loads there were.</li>
+    <li><b>flashprep_progress_v2</b> &ndash; which cards you have reviewed and when each is next due. This is what makes the review scheduling work when you are signed out.</li>
+  </ul>
+  <p>Clearing your browser data for this site removes both. If you are signed out, that erases your progress permanently, because there is no other copy.</p>
+  <h2>What is stored on our server</h2>
+  <p>The site uses <a href="https://supabase.com" rel="noopener">Supabase</a> as its database and login provider. Three tables hold data:</p>
+  <ul>
+    <li><b>Accounts</b> &ndash; your email address and a password. Passwords are hashed by Supabase before storage, which means they are stored as an irreversible scramble. Nobody, including the site owner, can read your password.</li>
+    <li><b>Progress</b> &ndash; for signed-in users only: which deck and card, how many times you have reviewed it, its current interval, and when it is next due. It is linked to your account so it can sync across devices.</li>
+    <li><b>Usage events</b> &ndash; a small number of anonymous records such as opening a deck, reviewing your first card of a session, finishing a session, and being shown the account prompt. Each carries the random browser identifier above, and your account id only if you are signed in. We record what happened, not what you answered.</li>
+  </ul>
+  <p>We do not store your IP address in any of these tables, and we do not store your name, your university, or anything you did not type into the signup form.</p>
+  <h2>Why we collect it</h2>
+  <p>The account data exists to give you a login and to sync progress, which is the service you asked for by signing up. The usage events exist so we can tell which parts of the site people abandon and fix them; a site nobody can measure is a site nobody can improve. Under UK and EU data protection law, the first rests on performing the service you requested and the second on our legitimate interest in operating and improving the site. If you would rather not be counted at all, browser storage can be blocked for this site and the tracking silently stops working, without breaking anything else.</p>
+  <h2>Third parties that see something</h2>
+  <p>Being honest about this, because these are requests your browser makes when it loads the page, and each one reveals your IP address to the company involved:</p>
+  <ul>
+    <li><b>GitHub Pages</b> hosts the site's files.</li>
+    <li><b>Cloudflare</b> handles the domain and routes traffic.</li>
+    <li><b>Supabase</b> stores accounts, progress and events.</li>
+    <li><b>Google Fonts</b> serves the typeface the site uses.</li>
+    <li><b>jsDelivr</b> serves the Supabase JavaScript library.</li>
+  </ul>
+  <p>None of these are advertising networks and none receive your study data. The last two are ordinary content delivery networks, but they are third parties, so they are named here rather than left out.</p>
+  <h2>How long it is kept</h2>
+  <p>Account and progress data is kept until you ask for it to be deleted. Usage events are kept while they are useful for understanding how the site is used. Browser storage stays until you clear it.</p>
+  <h2>Your rights</h2>
+  <p>If you are in the UK or the EU you have the right to see what we hold about you, correct it, have it deleted, or object to how it is used. In practice, for this site, the fastest route to all of the above is to email us and ask.</p>
+  <p>Email <a href="mailto:hello@viewprep.net">hello@viewprep.net</a> and say what you want done. Deletion requests remove your account, your synced progress, and any events tied to your account id.</p>
+  <h2>Children</h2>
+  <p>The site is intended for university students and adults preparing for job interviews. It is not directed at children.</p>
+  <h2>Changes</h2>
+  <p>If this policy changes materially, the date at the top of this page changes with it. There is no mailing list, so checking this page is the way to see it.</p>
+  <h2>Contact</h2>
+  <p><a href="mailto:hello@viewprep.net">hello@viewprep.net</a></p>
+  </div>
+
+  <footer class="site-footer">
+    <p>ViewPrep is an independent portfolio project. All flashcard content is originally
+    written and is not affiliated with, endorsed by, or sourced from any university,
+    employer, or prep platform.</p>
+    <p><a href="https://viewprep.net/">Study these cards interactively</a> &middot;
+       <a href="https://viewprep.net/decks/">All decks</a> &middot;
+       <a href="https://viewprep.net/faq.html">FAQ</a> &middot;
+       <a href="https://viewprep.net/privacy.html">Privacy</a> &middot;
+       <a href="https://viewprep.net/terms.html">Terms</a></p>
+  </footer>
+</div>
+</body>
+</html>

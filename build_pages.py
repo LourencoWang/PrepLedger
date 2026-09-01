@@ -15,6 +15,7 @@ Re-run after any decks.json change.
 """
 
 import json
+import legal_pages
 import os
 import html
 import datetime
@@ -100,6 +101,13 @@ STYLE = """
   .cta-band{border:1px solid var(--line-soft);border-radius:16px;background:var(--surface);
     padding:1.6rem;margin:2.5rem 0;text-align:center;}
   .cta-band p{margin:0 0 1.1rem;color:var(--ink-soft);font-size:.95rem;}
+  .meta-line{color:var(--ink-faint);font-size:.9rem;margin:-.4rem 0 2rem;}
+  .prose h2{font-size:1.15rem;margin:2.2rem 0 .7rem;letter-spacing:-.01em;}
+  .prose p{margin:0 0 1rem;line-height:1.75;}
+  .prose ul{margin:0 0 1.2rem;padding-left:1.15rem;}
+  .prose li{margin:0 0 .55rem;line-height:1.7;}
+  .prose a{color:var(--blue);}
+  .cta-block{margin-top:3rem;padding-top:2rem;border-top:1px solid var(--line-soft);}
   .site-footer{border-top:1px solid var(--line-soft);padding:1.5rem 0 0;margin-top:3rem;
     color:var(--ink-faint);font-size:.82rem;line-height:1.6;}
   .site-footer a{color:var(--ink-soft);}
@@ -155,7 +163,10 @@ def footer(deck_id=None):
     written and is not affiliated with, endorsed by, or sourced from any university,
     employer, or prep platform.</p>
     <p><a href="{SITE}/{('?deck=' + deck_id) if deck_id else ''}">Study these cards interactively</a> &middot;
-       <a href="{SITE}/decks/">All decks</a></p>
+       <a href="{SITE}/decks/">All decks</a> &middot;
+       <a href="{SITE}/faq.html">FAQ</a> &middot;
+       <a href="{SITE}/privacy.html">Privacy</a> &middot;
+       <a href="{SITE}/terms.html">Terms</a></p>
   </footer>
 </div>
 </body>
@@ -267,10 +278,26 @@ def hub_page(decks):
     return "\n".join(out)
 
 
+def simple_page(slug, title, desc, body, jsonld=None):
+    """A standalone prose page (privacy, terms, FAQ). Uses the same head() and
+    footer() as every deck page so these cannot drift out of style."""
+    canonical = f"{SITE}/{slug}"
+    out = [head(title, desc, canonical)]
+    out.append('  <div class="prose">')
+    out.append(body)
+    out.append("  </div>")
+    if jsonld is not None:
+        out.append('  <script type="application/ld+json">'
+                   + json.dumps(jsonld, ensure_ascii=False) + "</script>")
+    out.append(footer())
+    return "\n".join(out)
+
+
 def sitemap(decks):
     today = datetime.date.today().isoformat()
     urls = [(f"{SITE}/", "1.0"), (f"{SITE}/{OUT_DIR}/", "0.9")]
     urls += [(f"{SITE}/{OUT_DIR}/{d['id']}.html", "0.8") for d in decks]
+    urls += [(f"{SITE}/{slug}", pri) for slug, _t, _d, _b, _j, pri in legal_pages.PAGES]
     body = "\n".join(
         f"  <url>\n    <loc>{u}</loc>\n    <lastmod>{today}</lastmod>\n"
         f"    <priority>{p}</priority>\n  </url>" for u, p in urls)
@@ -313,6 +340,12 @@ def main():
 
     open(os.path.join(OUT_DIR, "index.html"), "w", encoding="utf-8").write(hub_page(decks))
     written.append(os.path.join(OUT_DIR, "index.html"))
+    for slug, title, desc, body_fn, jsonld_fn, _pri in legal_pages.PAGES:
+        html = simple_page(slug, title, desc, body_fn(),
+                           jsonld_fn() if jsonld_fn else None)
+        open(slug, "w", encoding="utf-8").write(html)
+        written.append(slug)
+
     open("sitemap.xml", "w", encoding="utf-8").write(sitemap(decks))
     written.append("sitemap.xml")
     open("robots.txt", "w", encoding="utf-8").write(ROBOTS)
